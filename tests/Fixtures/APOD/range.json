@@ -1,0 +1,21 @@
+[
+    {
+        "copyright": "NASA/JPL/Space Science Institute",
+        "date": "2015-06-03",
+        "explanation": "Why does this moon look like a sponge? To better investigate, NASA and ESA sent the Saturn-orbiting robotic spacecraft Cassini zooming past Saturn's moon Hyperion.",
+        "hdurl": "http://apod.nasa.gov/apod/image/1506/hyperion02_cassini_960.jpg",
+        "media_type": "image",
+        "service_version": "v1",
+        "title": "Hyperion: Sponge Moon of Saturn",
+        "url": "http://apod.nasa.gov/apod/image/1506/hyperion02_cassini_960.jpg"
+    },
+    {
+        "date": "2015-06-04",
+        "explanation": "A second day in the captured APOD date range.",
+        "hdurl": "https://apod.nasa.gov/apod/image/1506/sample_hd.jpg",
+        "media_type": "image",
+        "service_version": "v1",
+        "title": "APOD range second day",
+        "url": "https://apod.nasa.gov/apod/image/1506/sample.jpg"
+    }
+]

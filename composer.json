@@ -1,0 +1,78 @@
+{
+    "name": "projectsaturnstudios/venusian-stargazer",
+    "description": "National Aeronautics and Space Administration (NASA) integration for Venusian Framework applications.",
+    "type": "library",
+    "version": "0.8.0",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Project Saturn Studios, LLC",
+            "email": "info@projectsaturnstudios.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4|^8.5",
+        "venusian-voyager/http": "^0.8.0",
+        "venusian-voyager/io-pools": "^0.8.0",
+        "venusian-voyager/nuts-and-bolts": "^0.8.0"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.6",
+        "pestphp/pest": "^4"
+    },
+    "autoload": {
+        "psr-4": {
+            "ProjectSaturnStudios\\Stargazer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": {
+        "venusian": {
+            "providers": [
+                "ProjectSaturnStudios\\Stargazer\\Providers\\StargazerServiceProvider"
+            ],
+            "aliases": {
+                "NASA": "ProjectSaturnStudios\\Stargazer\\NASA"
+            }
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "test-coverage": "XDEBUG_MODE=coverage pest --coverage",
+        "test-coverage-html": "XDEBUG_MODE=coverage pest --coverage --coverage-html=tests/coverage",
+        "test-coverage-text": "XDEBUG_MODE=coverage pest --coverage --coverage-text",
+        "test-coverage-clover": "XDEBUG_MODE=coverage pest --coverage --coverage-clover=tests/coverage.xml"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "/Volumes/ProjectSaturnStudios/Development/PHP/ProjectSaturnStudios/dev/venusian/framework/src/Voyager/*",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "venusian-voyager/collections": "0.8.5",
+                    "venusian-voyager/conditionable": "0.8.5",
+                    "venusian-voyager/contracts": "0.8.5",
+                    "venusian-voyager/http": "0.8.5",
+                    "venusian-voyager/io-pools": "0.8.5",
+                    "venusian-voyager/macroable": "0.8.5",
+                    "venusian-voyager/magic-aliases": "0.8.5",
+                    "venusian-voyager/nuts-and-bolts": "0.8.5",
+                    "venusian-voyager/reflection": "0.8.5"
+                }
+            }
+        }
+    ]
+}

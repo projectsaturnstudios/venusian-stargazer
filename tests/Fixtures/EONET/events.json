@@ -1,0 +1,38 @@
+{
+    "title": "EONET Events",
+    "description": "Natural events from EONET.",
+    "link": "https://eonet.gsfc.nasa.gov/api/v3/events",
+    "events": [
+        {
+            "id": "EONET_23453",
+            "title": "Wildfire Calico, Humboldt, Nevada",
+            "description": "71 Miles N from Winnemucca, NV",
+            "link": "https://eonet.gsfc.nasa.gov/api/v3/events/EONET_23453",
+            "closed": null,
+            "categories": [
+                {
+                    "id": "wildfires",
+                    "title": "Wildfires"
+                }
+            ],
+            "sources": [
+                {
+                    "id": "IRWIN",
+                    "url": "https://irwin.doi.gov/observer/incidents/2026-NVHTF-020624"
+                }
+            ],
+            "geometry": [
+                {
+                    "magnitudeValue": 10000,
+                    "magnitudeUnit": "acres",
+                    "date": "2026-08-26T17:29:00Z",
+                    "type": "Point",
+                    "coordinates": [
+                        -117.3563,
+                        41.86665
+                    ]
+                }
+            ]
+        }
+    ]
+}

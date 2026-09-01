@@ -1,0 +1,21 @@
+[
+    {
+        "date": "2018-03-12",
+        "explanation": "Random APOD returned by the count parameter.",
+        "hdurl": "https://apod.nasa.gov/apod/image/1803/sample_hd.jpg",
+        "media_type": "image",
+        "service_version": "v1",
+        "title": "First random APOD",
+        "url": "https://apod.nasa.gov/apod/image/1803/sample.jpg"
+    },
+    {
+        "date": "2014-10-01",
+        "explanation": "The explosion is over but the consequences continue.",
+        "hdurl": "http://apod.nasa.gov/apod/image/1310/velafilaments_jadescope_960.jpg",
+        "media_type": "image",
+        "service_version": "v1",
+        "thumbnail_url": "https://img.youtube.com/vi/example/0.jpg",
+        "title": "Filaments of the Vela Supernova Remnant",
+        "url": "http://apod.nasa.gov/apod/image/1310/velafilaments_jadescope_960.jpg"
+    }
+]

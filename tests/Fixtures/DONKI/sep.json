@@ -1,0 +1,23 @@
+[
+    {
+        "sepID": "2017-09-06T23:30:00-SEP-001",
+        "eventTime": "2017-09-06T23:30Z",
+        "instruments": [
+            {
+                "displayName": "SOHO: COSTEP 15.8-39.8 MeV"
+            }
+        ],
+        "submissionTime": "2017-09-08T21:50Z",
+        "versionId": 1,
+        "link": "https://webtools.ccmc.gsfc.nasa.gov/DONKI/view/SEP/13081/-1",
+        "linkedEvents": [
+            {
+                "activityID": "2017-09-06T11:53:00-FLR-001"
+            },
+            {
+                "activityID": "2017-09-06T12:24:00-CME-001"
+            }
+        ],
+        "sentNotifications": null
+    }
+]

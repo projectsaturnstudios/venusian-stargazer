@@ -1,0 +1,48 @@
+[
+    {
+        "activityID": "2016-09-02T06:18:00-CME-001",
+        "catalog": "M2M_CATALOG",
+        "startTime": "2016-09-02T06:18Z",
+        "instruments": [
+            {
+                "displayName": "SOHO: LASCO/C3"
+            },
+            {
+                "displayName": "SOHO: LASCO/C2"
+            },
+            {
+                "displayName": "STEREO A: SECCHI/COR2"
+            }
+        ],
+        "sourceLocation": "",
+        "activeRegionNum": null,
+        "note": "Start time is time when seen in SOHO LASCO C3 due to a data gap in SOHO LASCO C2 imagery.",
+        "submissionTime": "2016-09-02T14:42Z",
+        "versionId": 1,
+        "link": "https://webtools.ccmc.gsfc.nasa.gov/DONKI/view/CME/11209/-1",
+        "cmeAnalyses": [
+            {
+                "isMostAccurate": true,
+                "time21_5": "2016-09-02T19:15Z",
+                "latitude": 35,
+                "longitude": -87,
+                "halfAngle": 27,
+                "speed": 218,
+                "type": "S",
+                "featureCode": "null",
+                "imageType": null,
+                "measurementTechnique": "null",
+                "note": "",
+                "levelOfData": 0,
+                "tilt": null,
+                "minorHalfWidth": null,
+                "speedMeasuredAtHeight": null,
+                "submissionTime": "2016-09-02T14:43Z",
+                "link": "https://webtools.ccmc.gsfc.nasa.gov/DONKI/view/CMEAnalysis/11210/-1",
+                "enlilList": []
+            }
+        ],
+        "linkedEvents": null,
+        "sentNotifications": null
+    }
+]

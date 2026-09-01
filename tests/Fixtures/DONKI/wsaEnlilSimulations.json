@@ -1,0 +1,33 @@
+[
+    {
+        "simulationID": "WSA-ENLIL/10003/1",
+        "modelCompletionTime": "2016-01-06T02:34Z",
+        "au": 2,
+        "cmeInputs": [
+            {
+                "cmeStartTime": "2016-01-05T04:36Z",
+                "latitude": -21,
+                "longitude": 105,
+                "speed": 530,
+                "halfAngle": 19,
+                "time21_5": "2016-01-05T04:36Z",
+                "featureCode": "null",
+                "isMostAccurate": true,
+                "levelOfData": 1,
+                "ipsList": [],
+                "cmeid": "2016-01-05T04:36:00-CME-001"
+            }
+        ],
+        "estimatedShockArrivalTime": null,
+        "estimatedDuration": null,
+        "rmin_re": null,
+        "kp_18": null,
+        "kp_90": null,
+        "kp_135": null,
+        "kp_180": null,
+        "isEarthGB": false,
+        "isEarthMinorImpact": false,
+        "impactList": null,
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/WSA-ENLIL/10003/-1"
+    }
+]

@@ -1,0 +1,25 @@
+{
+    "title": "EONET Event Sources",
+    "description": "List of all the available event sources in the EONET system",
+    "link": "https://eonet.gsfc.nasa.gov/api/v3/sources",
+    "sources": [
+        {
+            "id": "AVO",
+            "title": "Alaska Volcano Observatory",
+            "source": "https://www.avo.alaska.edu/",
+            "link": "https://eonet.gsfc.nasa.gov/api/v3/events?source=AVO"
+        },
+        {
+            "id": "ABFIRE",
+            "title": "Alberta Wildfire",
+            "source": "https://wildfire.alberta.ca/",
+            "link": "https://eonet.gsfc.nasa.gov/api/v3/events?source=ABFIRE"
+        },
+        {
+            "id": "AU_BOM",
+            "title": "Australia Bureau of Meteorology",
+            "source": "http://www.bom.gov.au/",
+            "link": "https://eonet.gsfc.nasa.gov/api/v3/events?source=AU_BOM"
+        }
+    ]
+}

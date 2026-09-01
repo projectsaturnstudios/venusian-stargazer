@@ -1,0 +1,38 @@
+{
+    "results": [
+        [
+            "6977751c4c9f941bf40668c3",
+            "GSFC-SO-276",
+            "Knowledge Is <span class=\"highlight\">Battery</span> Power",
+            "After working with Goddard Space Flight Center on Small Business Innovation Research grants, the founder of Electra Vehicles transferred the knowledge he gained and technology he developed to the field of electric vehicle <span class=\"highlight\">battery</span> management systems.",
+            "GSFC-SO-276",
+            "Environment and Resource Management",
+            "",
+            "",
+            "",
+            "GSFC",
+            "",
+            "",
+            17.057373
+        ],
+        [
+            "54ed040095dd5ea635823aef",
+            "GRC-SO-168",
+            "<span class=\"highlight\">Battery</span> Technology Stores Clean Energy",
+            "Headquartered in Fremont, California, Deeya Energy Inc. is now bringing its flow batteries to commercial customers around the world after working with former Marshall Space Flight Center scientist, Lawrence Thaller. Deeya&apos;s liquid-cell batteries have higher power capability than Thaller&apos;s original design, are less expensive than lead-acid batteries, are a clean energy alternative, and are 10 to 20 times less expensive than nickel-metal hydride batteries, lithium-ion batteries, and fuel cell options.",
+            "GRC-SO-168",
+            "Environment and Resource Management",
+            "",
+            "",
+            "",
+            "GRC",
+            "",
+            "",
+            16.026623
+        ]
+    ],
+    "count": 64,
+    "total": 64,
+    "perpage": 10,
+    "page": 0
+}

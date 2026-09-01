@@ -1,0 +1,36 @@
+[
+    {
+        "rbeID": "2015-03-19T10:40:00-RBE-001",
+        "eventTime": "2015-03-19T10:40Z",
+        "instruments": [
+            {
+                "displayName": "GOES13: SEM/EPS >0.8 MeV"
+            }
+        ],
+        "submissionTime": "2015-03-19T11:05Z",
+        "versionId": 1,
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/RBE/8056/-1",
+        "linkedEvents": [
+            {
+                "activityID": "2015-03-16T00:00:00-HSS-001"
+            }
+        ],
+        "sentNotifications": [
+            {
+                "messageID": "20150319-AL-003",
+                "messageIssueTime": "2015-03-19T11:05Z",
+                "messageURL": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/Alert/8057/1"
+            },
+            {
+                "messageID": "20150319-AL-004",
+                "messageIssueTime": "2015-03-19T11:59Z",
+                "messageURL": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/Alert/8058/1"
+            },
+            {
+                "messageID": "20150321-AL-001",
+                "messageIssueTime": "2015-03-21T23:04Z",
+                "messageURL": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/Alert/8073/1"
+            }
+        ]
+    }
+]

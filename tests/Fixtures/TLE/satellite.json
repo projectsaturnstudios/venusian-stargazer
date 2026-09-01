@@ -1,0 +1,10 @@
+{
+    "@context": "https://www.w3.org/ns/hydra/context.jsonld",
+    "@id": "https://tle.ivanstanojevic.me/api/tle/25544",
+    "@type": "Tle",
+    "satelliteId": 25544,
+    "name": "ISS (ZARYA)",
+    "date": "2026-08-30T11:57:48+00:00",
+    "line1": "1 25544U 98067A   26242.49847866  .00005671  00000+0  11126-3 0  9990",
+    "line2": "2 25544  51.6316 292.2906 0005026  90.0365 270.1200 15.48938909583273"
+}

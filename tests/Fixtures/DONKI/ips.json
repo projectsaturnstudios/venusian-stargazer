@@ -1,0 +1,37 @@
+[
+    {
+        "catalog": "M2M_CATALOG",
+        "activityID": "2015-03-17T04:05:00-IPS-001",
+        "location": "Earth",
+        "eventTime": "2015-03-17T04:05Z",
+        "submissionTime": "2015-03-17T07:22Z",
+        "versionId": 2,
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/IPS/8028/-1",
+        "instruments": [
+            {
+                "displayName": "ACE: MAG"
+            },
+            {
+                "displayName": "ACE: SWEPAM"
+            }
+        ],
+        "linkedEvents": [
+            {
+                "activityID": "2015-03-15T02:00:00-CME-001"
+            },
+            {
+                "activityID": "2015-03-17T06:00:00-GST-001"
+            },
+            {
+                "activityID": "2015-03-17T06:23:00-MPC-001"
+            }
+        ],
+        "sentNotifications": [
+            {
+                "messageID": "20150317-AL-003",
+                "messageIssueTime": "2015-03-17T11:37Z",
+                "messageURL": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/Alert/8033/1"
+            }
+        ]
+    }
+]

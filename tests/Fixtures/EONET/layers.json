@@ -1,0 +1,35 @@
+{
+    "title": "EONET Web Service Layers",
+    "description": "List of web service layers in the EONET system",
+    "link": "https://eonet.gsfc.nasa.gov/api/v3/layers/wildfires",
+    "categories": [
+        {
+            "id": 8,
+            "title": "Wildfires",
+            "layers": [
+                {
+                    "name": "AIRS_CO_Total_Column_Day",
+                    "serviceUrl": "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi",
+                    "serviceTypeId": "WMTS_1_0_0",
+                    "parameters": [
+                        {
+                            "TILEMATRIXSET": "2km",
+                            "FORMAT": "image/png"
+                        }
+                    ]
+                },
+                {
+                    "name": "AIRS_CO_Total_Column_Night",
+                    "serviceUrl": "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi",
+                    "serviceTypeId": "WMTS_1_0_0",
+                    "parameters": [
+                        {
+                            "TILEMATRIXSET": "2km",
+                            "FORMAT": "image/png"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

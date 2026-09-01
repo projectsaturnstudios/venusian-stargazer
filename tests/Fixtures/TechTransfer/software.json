@@ -1,0 +1,38 @@
+{
+    "results": [
+        [
+            "5e2a915840205c0db25a7822",
+            "MFS-33014-1",
+            "Smartphone Video <span class=\"highlight\">Guidance</span> Sensor (SVGS)",
+            "The Smartphone Video <span class=\"highlight\">Guidance</span> Sensor (SVGS) allows for calculation of the distance and orientation of an object relative to the SVGS.  A known retroreflective target pattern is mounted on the target object.  These retroreflectors are then illuminated by the camera flash on the smartphone and imaged by the smartphone camera.  The resulting image is processed using photogrammetry algorithms running on the smartphone to extract the relative X, Y, and Z distance and relative orientation, expressed as a roll, pitch, yaw angle sequence.",
+            "MFS-33014-1",
+            "autonomous systems",
+            "U.S. Release Only",
+            "",
+            "",
+            "MSFC",
+            "",
+            "",
+            19.466461
+        ],
+        [
+            "6260ee631c01d114a968bc78",
+            "NPO-51335-1",
+            "Webification of Earth Science <span class=\"highlight\">Guidance</span> Documentation",
+            "The goal of this technology is to provide a full stack web application to convert legacy PODAAC user guide documentation from DOCX to HTML, create standardized structure and intelligently manipulate the content of the documents. The web app is to be used as an internal tool for PODAAC Data Engineers. The web application builds upon an open source Python 3 library called Mammoth, which converts DOCX to simple and clean HTML. After conversion to HTML, the application parses the HTML using Beautiful Soup 4, adds Bootstrap CSS styling, wraps all img and table tags in responsive CSS classes, converts any unsupported images to PNGs, converts all FTP links to HTTPS PODAAC Drive links and dynamically creates a hyperlinked table of contents. The HTML output is responsive, mobile friendly and fully self contained in one file. The application is containerized using Docker and orchestrated via Docker Compose. The application uses React for the frontend, Flask for the backend and Nginx as a reverse proxy server.",
+            "NPO-51335-1",
+            "data and image processing",
+            "Open Source",
+            "",
+            "https://github.com/podaac/docx-to-html",
+            "JPL",
+            "",
+            "",
+            18.587017
+        ]
+    ],
+    "count": 11,
+    "total": 11,
+    "perpage": 10,
+    "page": 0
+}

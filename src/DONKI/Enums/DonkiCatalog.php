@@ -1,0 +1,15 @@
+<?php
+
+namespace ProjectSaturnStudios\Stargazer\DONKI\Enums;
+
+enum DonkiCatalog: string
+{
+    case ALL = 'ALL';
+    case M2M_CATALOG = 'M2M_CATALOG';
+    case SWRC_CATALOG = 'SWRC_CATALOG';
+    case JANG_ET_AL_CATALOG = 'JANG_ET_AL_CATALOG';
+    case WINSLOW_MESSENGER_ICME_CATALOG = 'WINSLOW_MESSENGER_ICME_CATALOG';
+    case SWPC_ANNEX_CME_CATALOG = 'SWPC_ANNEX_CME_CATALOG';
+    case SEPVAL_CME_CATALOG = 'SEPVAL_CME_CATALOG';
+    case MAVEN_EUVM_FLARE_CATALOG = 'MAVEN_EUVM_FLARE_CATALOG';
+}
