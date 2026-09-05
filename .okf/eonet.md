@@ -1,19 +1,22 @@
 ---
 type: API Family
 title: EONET
-description: Earth Observatory Natural Event Tracker v3 — events, categories, sources, layers, magnitudes.
+description: Earth Observatory Natural Event Tracker v3 — one page DTO per endpoint envelope family.
 tags:
   - eonet
   - earth
   - core
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-08-31
-  at: '2026-08-31T04:20:00Z'
+  by: cursor-grok-4.6/2026-09-04
+  at: '2026-09-04T03:15:00Z'
 sources:
   - id: service
     resource: src/EONET/EonetAPIService.php
     title: EonetAPIService
+  - id: arrived
+    resource: src/EONET/EonetArrived.php
+    title: EonetArrived mail
 ---
 
 # Overview
@@ -32,6 +35,15 @@ sources:
 
 Fluent query params (`source()`, `status()`, `limit()`) ride on `PendingNasaRequest`. `EonetEventStatus` is `OPEN` / `CLOSED` / `ALL`.
 
-The campaign example `NASA::eonet()->categories()->source('InciWeb')->status('open')->async()` returns a `PendingCall` named `stargazer.eonet.categories`.
+The campaign example `NASA::eonet()->categories()->source('InciWeb')->status('open')->async()` dispatches `stargazer.eonet.categories`; the dock drains `EonetArrived` (`$page` is the endpoint page DTO) or `EonetFailed`.[^service][^arrived]
+
+# Mail
+
+`async()` on every builder keeps the class-string hydrator and adds an envelope. The dock drains `EonetArrived` (`$page` is `EonetEventsPage`, `EonetCategoriesPage`, `EonetSourcesPage`, `EonetLayersPage`, or `EonetMagnitudesPage`) or `EonetFailed`.[^service][^arrived]
+
+# Related
+
+* [Async envelope pattern](/async-envelope-pattern.md) — one page DTO per endpoint.
 
 [^service]: EonetAPIService
+[^arrived]: EonetArrived mail

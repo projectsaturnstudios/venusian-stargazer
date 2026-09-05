@@ -38,7 +38,7 @@
                 "ProjectSaturnStudios\\Stargazer\\Providers\\StargazerServiceProvider"
             ],
             "aliases": {
-                "NASA": "ProjectSaturnStudios\\Stargazer\\NASA"
+                "NASA": "ProjectSaturnStudios\\Stargazer\\MagicAliases\\NASA"
             }
         }
     },

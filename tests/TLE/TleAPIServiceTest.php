@@ -3,11 +3,10 @@
 use ProjectSaturnStudios\Stargazer\NasaClient;
 use ProjectSaturnStudios\Stargazer\TLE\DataObjects\TleCollection;
 use ProjectSaturnStudios\Stargazer\TLE\DataObjects\TleRecord;
-use Voyager\Contracts\IOPools\HttpDriver;
+use ProjectSaturnStudios\Stargazer\TLE\TleArrived;
+use ProjectSaturnStudios\Stargazer\TLE\TleFailed;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\EventQueue;
-use Voyager\IOPools\HttpPool;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
 function tleFixture(string $file): array
@@ -28,31 +27,6 @@ function tleHttp(string $file): Factory
     Http::swap($http);
 
     return $http;
-}
-
-function tlePool(): array
-{
-    $driver = new class implements HttpDriver
-    {
-        public array $dispatched = [];
-
-        public function dispatch(string $name, string $method, string $url, array $headers, ?string $body): void
-        {
-            $this->dispatched[] = compact('name', 'method', 'url', 'headers', 'body');
-        }
-
-        public function harvest(): array
-        {
-            return [];
-        }
-
-        public function progress(): array
-        {
-            return [];
-        }
-    };
-
-    return [$driver, new HttpPool($driver, new EventQueue)];
 }
 
 beforeEach(function () {
@@ -140,14 +114,49 @@ it('retrieves a single TLE satellite by NORAD id', function () {
     $http->assertSent(fn ($request) => str_contains($request->url(), '/api/tle/25544'));
 });
 
-it('returns a namespaced PendingCall from TLE async()', function () {
-    $http = tleHttp('satellite.json');
-    [$driver, $pool] = tlePool();
+it('dispatches each TLE async() builder under its namespaced call name', function (string $method, array $args, string $path, ?string $query = null) {
+    [$dock, $driver] = stargazerDock();
 
-    $call = (new NasaClient(http: $http, pool: $pool))->tle()->satellite(25544)->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->tle()->{$method}(...$args)->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.tle.satellite')
-        ->and($driver->dispatched[0]['url'])->toContain('/api/tle/25544')
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.tle.'.$method)
+        ->and($driver->dispatched[0]['url'])->toContain($path)
         ->and($driver->dispatched[0]['url'])->not->toContain('api_key=');
+
+    if (! is_null($query)) {
+        expect($driver->dispatched[0]['url'])->toContain($query);
+    }
+})->with([
+    'collection' => ['collection', [], '/api/tle'],
+    'search' => ['search', ['ISS'], '/api/tle', 'search=ISS'],
+    'satellite' => ['satellite', [25544], '/api/tle/25544'],
+]);
+
+it('mails TleArrived carrying the hydrated page through the dock', function () {
+    [$dock, $driver] = stargazerDock();
+
+    $presumption = stargazerClient(stargazerHttp(), $dock)->tle()->collection()->async();
+
+    $driver->ready = [stargazerResult('stargazer.tle.collection', stargazerFixture('TLE', 'collection'))];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(TleArrived::class)
+        ->and($mail->page)->toBeInstanceOf(TleCollection::class)
+        ->and($mail->page->members->first()->satelliteId)->toBe(25544)
+        ->and($presumption->settled())->toBeTrue();
+});
+
+it('mails TleFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->tle()->collection()->async();
+    $driver->ready = [stargazerResult('stargazer.tle.collection', 'gone', status: 502)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(TleFailed::class)
+        ->and($mail->ok())->toBeFalse()
+        ->and($mail->reason)->toContain('502');
 });

@@ -4,12 +4,12 @@ use ProjectSaturnStudios\Stargazer\EPIC\DataObjects\EpicAvailableDate;
 use ProjectSaturnStudios\Stargazer\EPIC\DataObjects\EpicImage;
 use ProjectSaturnStudios\Stargazer\EPIC\Enums\EpicCollection;
 use ProjectSaturnStudios\Stargazer\EPIC\Enums\EpicImageType;
+use ProjectSaturnStudios\Stargazer\EPIC\EpicArrived;
+use ProjectSaturnStudios\Stargazer\EPIC\EpicFailed;
+use ProjectSaturnStudios\Stargazer\EPIC\EpicImageReady;
 use ProjectSaturnStudios\Stargazer\NasaClient;
-use Voyager\Contracts\IOPools\HttpDriver;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\EventQueue;
-use Voyager\IOPools\HttpPool;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
@@ -31,31 +31,6 @@ function epicHttp(string $file): Factory
     Http::swap($http);
 
     return $http;
-}
-
-function epicPool(): array
-{
-    $driver = new class implements HttpDriver
-    {
-        public array $dispatched = [];
-
-        public function dispatch(string $name, string $method, string $url, array $headers, ?string $body): void
-        {
-            $this->dispatched[] = compact('name', 'method', 'url', 'headers', 'body');
-        }
-
-        public function harvest(): array
-        {
-            return [];
-        }
-
-        public function progress(): array
-        {
-            return [];
-        }
-    };
-
-    return [$driver, new HttpPool($driver, new EventQueue)];
 }
 
 beforeEach(function () {
@@ -170,18 +145,54 @@ it('lists available enhanced dates from the captured fixture', function () {
     $http->assertSent(fn ($request) => str_contains($request->url(), '/EPIC/api/enhanced/available'));
 });
 
-it('returns a namespaced PendingCall from EPIC async()', function () {
-    $http = epicHttp('natural.json');
-    [$driver, $pool] = epicPool();
+it('mails EpicArrived carrying hydrated images through the dock', function () {
+    [$dock, $driver] = stargazerDock();
 
-    $call = (new NasaClient(api_key: 'TEST_KEY', http: $http, pool: $pool))
-        ->epic()
-        ->natural()
-        ->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->epic()->natural()->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.epic.natural')
-        ->and($driver->dispatched[0]['method'])->toBe('GET')
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.epic.natural')
         ->and($driver->dispatched[0]['url'])->toContain('/EPIC/api/natural')
         ->and($driver->dispatched[0]['url'])->toContain('api_key=TEST_KEY');
+
+    $driver->ready = [stargazerResult('stargazer.epic.natural', epicFixture('natural.json'))];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(EpicArrived::class)
+        ->and($mail->items[0])->toBeInstanceOf(EpicImage::class)
+        ->and($presumption->settled())->toBeTrue();
+});
+
+it('mails EpicFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->epic()->natural()->async();
+    $driver->ready = [stargazerResult('stargazer.epic.natural', 'gone', status: 500)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(EpicFailed::class)
+        ->and($mail->reason)->toContain('500');
+});
+
+it('follows an image link with renderAsync and mails EpicImageReady', function () {
+    [$dock, $driver] = stargazerDock();
+
+    $image = EpicImage::fromArray(epicFixture('natural.json')[0]);
+    $presumption = $image->renderAsync(EpicCollection::NATURAL, EpicImageType::PNG);
+
+    $name = "stargazer.epic.image.{$image->identifier}";
+    expect($presumption->name)->toBe($name)
+        ->and($driver->dispatched[0]['url'])->toBe($image->archiveUrl(EpicCollection::NATURAL, EpicImageType::PNG))
+        ->and($image->renderAsync(EpicCollection::NATURAL))->toBe($presumption);
+
+    $driver->ready = [stargazerResult($name, 'PNGBYTES')];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(EpicImageReady::class)
+        ->and($mail->image)->toBe($image)
+        ->and($mail->extension)->toBe('png')
+        ->and($mail->result->body)->toBe('PNGBYTES');
 });

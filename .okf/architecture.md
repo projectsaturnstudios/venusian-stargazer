@@ -8,8 +8,8 @@ tags:
   - dto
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-08-31
-  at: '2026-08-31T04:20:00Z'
+  by: cursor-grok-4.6/2026-09-04
+  at: '2026-09-04T03:15:00Z'
 sources:
   - id: pending
     resource: src/PendingNasaRequest.php
@@ -29,7 +29,7 @@ sources:
 
 The public surface is `NASA` → `NasaClient` → a typed `*APIService` → `PendingNasaRequest`. Services never hard-code hosts; they pass a [`NasaURL`](/api-coverage.md) case into `pending()`.[^urls][^service]
 
-`PendingNasaRequest` carries the endpoint path, query params, a namespaced call name (`stargazer.<api>.<endpoint>`), and a hydrator (a DTO class-string or a closure). Fluent `with()` / `__call` add query params. `get()` and `async()` are documented in [async-seam](/async-seam.md).[^pending]
+`PendingNasaRequest` carries the endpoint path, query params, a namespaced call name (`stargazer.<api>.<endpoint>`), a hydrator (a DTO class-string or a closure), and an envelope closure. Fluent `with()` / `__call` add query params. `get()` stays sync; `async()` is the [envelope pattern](/async-envelope-pattern.md).[^pending]
 
 # DTOs
 

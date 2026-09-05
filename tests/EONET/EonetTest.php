@@ -6,8 +6,11 @@ use ProjectSaturnStudios\Stargazer\EONET\DataObjects\EonetLayer;
 use ProjectSaturnStudios\Stargazer\EONET\DataObjects\EonetMagnitude;
 use ProjectSaturnStudios\Stargazer\EONET\DataObjects\EonetSource;
 use ProjectSaturnStudios\Stargazer\EONET\Enums\EonetEventStatus;
+use ProjectSaturnStudios\Stargazer\EONET\DataObjects\EonetEventsPage;
+use ProjectSaturnStudios\Stargazer\EONET\EonetArrived;
+use ProjectSaturnStudios\Stargazer\EONET\EonetFailed;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
@@ -53,19 +56,17 @@ it('builds the EONET categories URL and hydrates the captured fixture', function
         ->and($page->categories)->toHaveCount(3);
 });
 
-it('returns a PendingCall from NASA::eonet()->categories()->source(\'InciWeb\')->status(\'open\')->async()', function () {
-    $http = stargazerHttp();
-    [$driver, $pool] = stargazerPool();
+it('carries fluent query params through async() dispatch', function () {
+    [$dock, $driver] = stargazerDock();
 
-    $call = stargazerClient($http, $pool)
+    $presumption = stargazerClient(stargazerHttp(), $dock)
         ->eonet()
         ->categories()
         ->source('InciWeb')
         ->status('open')
         ->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.eonet.categories')
+    expect($presumption->name)->toBe('stargazer.eonet.categories')
         ->and($driver->dispatched[0]['url'])->toContain('/api/v3/categories')
         ->and($driver->dispatched[0]['url'])->toContain('source=InciWeb')
         ->and($driver->dispatched[0]['url'])->toContain('status=open')
@@ -106,14 +107,13 @@ it('builds the EONET magnitudes URL and hydrates the captured fixture', function
         ->and($page->magnitudes->first()->unit)->toBe('acres');
 });
 
-it('returns a namespaced PendingCall from each EONET async() builder', function (string $method, array $args, string $path) {
-    $http = stargazerHttp();
-    [$driver, $pool] = stargazerPool();
+it('dispatches each EONET async() builder under its namespaced call name', function (string $method, array $args, string $path) {
+    [$dock, $driver] = stargazerDock();
 
-    $call = stargazerClient($http, $pool)->eonet()->{$method}(...$args)->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->eonet()->{$method}(...$args)->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.eonet.'.$method)
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.eonet.'.$method)
         ->and($driver->dispatched[0]['url'])->toContain($path);
 })->with([
     'events' => ['events', [], '/api/v3/events'],
@@ -122,3 +122,31 @@ it('returns a namespaced PendingCall from each EONET async() builder', function 
     'layers' => ['layers', [], '/api/v3/layers'],
     'magnitudes' => ['magnitudes', [], '/api/v3/magnitudes'],
 ]);
+
+it('mails EonetArrived carrying the hydrated page through the dock', function () {
+    [$dock, $driver] = stargazerDock();
+
+    $presumption = stargazerClient(stargazerHttp(), $dock)->eonet()->events()->async();
+
+    $driver->ready = [stargazerResult('stargazer.eonet.events', stargazerFixture('EONET', 'events'))];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(EonetArrived::class)
+        ->and($mail->page)->toBeInstanceOf(EonetEventsPage::class)
+        ->and($mail->page->events->first()->id)->toBe('EONET_23453')
+        ->and($presumption->settled())->toBeTrue();
+});
+
+it('mails EonetFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->eonet()->events()->async();
+    $driver->ready = [stargazerResult('stargazer.eonet.events', 'gone', status: 502)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(EonetFailed::class)
+        ->and($mail->ok())->toBeFalse()
+        ->and($mail->reason)->toContain('502');
+});

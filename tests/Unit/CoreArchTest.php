@@ -16,11 +16,8 @@ use ProjectSaturnStudios\Stargazer\Exceptions\StargazerException;
 use ProjectSaturnStudios\Stargazer\NasaApiService;
 use ProjectSaturnStudios\Stargazer\NasaClient;
 use ProjectSaturnStudios\Stargazer\PendingNasaRequest;
-use Voyager\Contracts\IOPools\HttpDriver;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\EventQueue;
-use Voyager\IOPools\HttpPool;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
@@ -47,31 +44,6 @@ function coreArchHttp(): Factory
     Http::swap($http);
 
     return $http;
-}
-
-function coreArchPool(): array
-{
-    $driver = new class implements HttpDriver
-    {
-        public array $dispatched = [];
-
-        public function dispatch(string $name, string $method, string $url, array $headers, ?string $body): void
-        {
-            $this->dispatched[] = compact('name', 'method', 'url', 'headers', 'body');
-        }
-
-        public function harvest(): array
-        {
-            return [];
-        }
-
-        public function progress(): array
-        {
-            return [];
-        }
-    };
-
-    return [$driver, new HttpPool($driver, new EventQueue)];
 }
 
 beforeEach(function () {
@@ -176,11 +148,11 @@ it('appends api_key only for api.nasa.gov hosts', function () {
     });
 });
 
-it('returns a namespaced PendingCall from async() when a pool is bound', function () {
+it('returns a namespaced Presumption from async() when a pool is bound', function () {
     $http = coreArchHttp();
-    [$driver, $pool] = coreArchPool();
+    [$dock, $driver] = stargazerDock();
 
-    $call = (new PendingNasaRequest(
+    $presumption = (new PendingNasaRequest(
         base: NasaURL::DONKI,
         path: 'CME',
         call_name: 'stargazer.donki.cme',
@@ -188,11 +160,11 @@ it('returns a namespaced PendingCall from async() when a pool is bound', functio
         query: ['startDate' => '2026-07-01'],
         api_key: 'TEST_KEY',
         http: $http,
-        pool: $pool,
+        io_pool: $dock,
     ))->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.donki.cme')
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.donki.cme')
         ->and($driver->dispatched[0]['method'])->toBe('GET')
         ->and($driver->dispatched[0]['url'])->toContain('/DONKI/CME')
         ->and($driver->dispatched[0]['url'])->toContain('api_key=TEST_KEY');

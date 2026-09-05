@@ -7,6 +7,8 @@ use ProjectSaturnStudios\Stargazer\NasaApiService;
 use ProjectSaturnStudios\Stargazer\PendingNasaRequest;
 use ProjectSaturnStudios\Stargazer\TLE\DataObjects\TleCollection;
 use ProjectSaturnStudios\Stargazer\TLE\DataObjects\TleRecord;
+use Voyager\Contracts\IOPools\Completion;
+use Voyager\IOPools\DTO\HttpResult;
 
 class TleAPIService extends NasaApiService
 {
@@ -17,6 +19,7 @@ class TleAPIService extends NasaApiService
             path: 'tle',
             call_name: 'stargazer.tle.collection',
             hydrator: TleCollection::class,
+            envelope: fn (HttpResult $result): Completion => static::resolveHttpResult($result, TleCollection::class),
         );
     }
 
@@ -28,6 +31,7 @@ class TleAPIService extends NasaApiService
             call_name: 'stargazer.tle.search',
             hydrator: TleCollection::class,
             query: ['search' => $query],
+            envelope: fn (HttpResult $result): Completion => static::resolveHttpResult($result, TleCollection::class),
         );
     }
 
@@ -38,6 +42,38 @@ class TleAPIService extends NasaApiService
             path: 'tle/'.$id,
             call_name: 'stargazer.tle.satellite',
             hydrator: TleRecord::class,
+            envelope: fn (HttpResult $result): Completion => static::resolveHttpResult($result, TleRecord::class),
         );
     }
+
+    /**
+     * Shape the transport result into TLE mail. Collection and search
+     * answer a TleCollection; satellite answers a TleRecord. The
+     * endpoint's DTO rides in as $dto.
+     *
+     * @param  class-string  $dto
+     */
+    protected static function resolveHttpResult(HttpResult $result, string $dto): Completion
+    {
+        if (! $result->ok || $result->status >= 400) {
+            return new TleFailed(
+                name: $result->name,
+                result: $result,
+                reason: $result->error ?? "TLE answered status {$result->status}.",
+            );
+        }
+
+        $payload = json_decode($result->body, true);
+
+        if (! is_array($payload)) {
+            return new TleFailed(
+                name: $result->name,
+                result: $result,
+                reason: 'TLE body was not JSON.',
+            );
+        }
+
+        return new TleArrived($result->name, $dto::fromArray($payload));
+    }
 }
+

@@ -1,8 +1,7 @@
 <?php
 
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
-use ProjectSaturnStudios\Stargazer\NASA;
-use ProjectSaturnStudios\Stargazer\NasaClient;
+use ProjectSaturnStudios\Stargazer\MagicAliases\NASA;
 use Voyager\MagicAliases\MagicAlias;
 
 it('catalogues every NASA host as an uppercase string-backed case', function () {
@@ -18,5 +17,5 @@ it('resolves the NASA magic alias to NasaClient', function () {
     expect(is_subclass_of(NASA::class, MagicAlias::class))->toBeTrue();
 
     $method = new ReflectionMethod(NASA::class, 'getMagicAliasAccessor');
-    expect($method->invoke(null))->toBe(NasaClient::class);
+    expect($method->invoke(null))->toBe('nasa');
 });

@@ -11,8 +11,9 @@ NASA API client for Venusian (`projectsaturnstudios/venusian-stargazer` 0.8.0). 
 # Architecture
 
 * [Architecture](architecture.md) - builder, DTO, and `NasaURL` pattern every core API shares.
-* [Async seam](async-seam.md) - `get()` vs `async()`, `PendingCall`, and the HttpPool binding.
-* [API coverage](api-coverage.md) - core vs deferred status table for all sixteen hosts.
+* [Async envelope pattern](async-envelope-pattern.md) - hydrator/envelope lanes, typed mail, link-follows. All nine core families are exemplars.
+* [Async seam](async-seam.md) - `get()` vs `async()`, `PendingCall`, and the HttpPool binding (superseded by the envelope pattern).
+* [API coverage](api-coverage.md) - core vs deferred status table; nine core rows are envelope-complete.
 
 # Core API families
 

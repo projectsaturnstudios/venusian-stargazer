@@ -5,9 +5,11 @@ namespace ProjectSaturnStudios\Stargazer;
 use Closure;
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
 use ProjectSaturnStudios\Stargazer\Exceptions\StargazerException;
+use Voyager\Contracts\IOPools\Completion;
+use Voyager\Contracts\IOPools\PoolService;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\HttpPool;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\DTO\HttpResult;
+use Voyager\IOPools\Presumption;
 use Voyager\MagicAliases\MagicAlias;
 use Voyager\NutsAndBolts\Collection;
 use Voyager\NutsAndBolts\MagicAliases\Http;
@@ -15,18 +17,25 @@ use Voyager\NutsAndBolts\MagicAliases\Http;
 class PendingNasaRequest
 {
     /**
+     * $hydrator shapes the sync lane: get() feeds it the decoded JSON and
+     * answers DTOs. $envelope shapes the async lane: the driver feeds it
+     * the HttpResult and the mail it answers rides the dock. Without an
+     * envelope, async() mails the raw HttpResult.
+     *
      * @param  array<string, mixed>  $query
-     * @param  Closure(mixed):mixed|class-string  $hydrator
+     * @param  Closure(mixed):mixed|class-string|null  $hydrator
+     * @param  Closure(HttpResult):Completion|null  $envelope
      */
     public function __construct(
         protected NasaURL $base,
         protected string $path,
         protected string $call_name,
-        protected Closure|string $hydrator,
+        protected Closure|string|null $hydrator = null,
         protected array $query = [],
         protected ?string $api_key = null,
         protected ?Factory $http = null,
-        protected ?HttpPool $pool = null,
+        protected ?PoolService $io_pool = null,
+        protected ?Closure $envelope = null,
     ) {}
 
     public function with(string $name, mixed $value): static
@@ -62,12 +71,13 @@ class PendingNasaRequest
         return $this->hydrate($response->json());
     }
 
-    public function async(): PendingCall
+    public function async(): Presumption
     {
-        return $this->resolvePool()->call(
-            $this->call_name,
-            'GET',
-            $this->absoluteUrl(),
+        return $this->resolvePool()->http()->call(
+            name: $this->call_name,
+            url: $this->absoluteUrl(),
+            method: 'GET',
+            envelope: $this->envelope,
         );
     }
 
@@ -163,10 +173,10 @@ class PendingNasaRequest
         throw StargazerException::httpClientUnavailable();
     }
 
-    protected function resolvePool(): HttpPool
+    protected function resolvePool(): PoolService
     {
-        if (! is_null($this->pool)) {
-            return $this->pool;
+        if (! is_null($this->io_pool)) {
+            return $this->io_pool;
         }
 
         $vessel = MagicAlias::getMagicAliasApplication();

@@ -3,11 +3,10 @@
 use ProjectSaturnStudios\Stargazer\NasaClient;
 use ProjectSaturnStudios\Stargazer\TechTransfer\DataObjects\TechTransferPage;
 use ProjectSaturnStudios\Stargazer\TechTransfer\DataObjects\TechTransferRecord;
-use Voyager\Contracts\IOPools\HttpDriver;
+use ProjectSaturnStudios\Stargazer\TechTransfer\TechTransferArrived;
+use ProjectSaturnStudios\Stargazer\TechTransfer\TechTransferFailed;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\EventQueue;
-use Voyager\IOPools\HttpPool;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
 function techTransferFixture(string $file): array
@@ -28,31 +27,6 @@ function techTransferHttp(string $file): Factory
     Http::swap($http);
 
     return $http;
-}
-
-function techTransferPool(): array
-{
-    $driver = new class implements HttpDriver
-    {
-        public array $dispatched = [];
-
-        public function dispatch(string $name, string $method, string $url, array $headers, ?string $body): void
-        {
-            $this->dispatched[] = compact('name', 'method', 'url', 'headers', 'body');
-        }
-
-        public function harvest(): array
-        {
-            return [];
-        }
-
-        public function progress(): array
-        {
-            return [];
-        }
-    };
-
-    return [$driver, new HttpPool($driver, new EventQueue)];
 }
 
 function expectHydratedRecord(TechTransferRecord $record, array $row): void
@@ -141,17 +115,45 @@ it('searches TechTransfer spinoffs and hydrates the captured fixture', function 
     });
 });
 
-it('returns a namespaced PendingCall from TechTransfer async()', function () {
-    $http = techTransferHttp('patent.json');
-    [$driver, $pool] = techTransferPool();
+it('dispatches each TechTransfer async() builder under its namespaced call name', function (string $method, string $query, string $path, string $parameter) {
+    [$dock, $driver] = stargazerDock();
 
-    $call = (new NasaClient(api_key: 'TEST_KEY', http: $http, pool: $pool))
-        ->techtransfer()
-        ->patent('engine')
-        ->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->techtransfer()->{$method}($query)->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.techtransfer.patent')
-        ->and($driver->dispatched[0]['url'])->toContain('/techtransfer/patent')
-        ->and($driver->dispatched[0]['url'])->toContain('patent=engine');
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.techtransfer.'.$method)
+        ->and($driver->dispatched[0]['url'])->toContain($path)
+        ->and($driver->dispatched[0]['url'])->toContain($parameter.'='.$query);
+})->with([
+    'patent' => ['patent', 'engine', '/techtransfer/patent', 'patent'],
+    'software' => ['software', 'guidance', '/techtransfer/software', 'software'],
+    'spinoff' => ['spinoff', 'battery', '/techtransfer/spinoff', 'Spinoff'],
+]);
+
+it('mails TechTransferArrived carrying the hydrated page through the dock', function () {
+    [$dock, $driver] = stargazerDock();
+
+    $presumption = stargazerClient(stargazerHttp(), $dock)->techtransfer()->patent('engine')->async();
+
+    $driver->ready = [stargazerResult('stargazer.techtransfer.patent', techTransferFixture('patent.json'))];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(TechTransferArrived::class)
+        ->and($mail->page)->toBeInstanceOf(TechTransferPage::class)
+        ->and($mail->page->results->first()->id)->toBe('64e71c1a64038afc1d0a01d2')
+        ->and($presumption->settled())->toBeTrue();
+});
+
+it('mails TechTransferFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->techtransfer()->patent('engine')->async();
+    $driver->ready = [stargazerResult('stargazer.techtransfer.patent', 'gone', status: 502)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(TechTransferFailed::class)
+        ->and($mail->ok())->toBeFalse()
+        ->and($mail->reason)->toContain('502');
 });

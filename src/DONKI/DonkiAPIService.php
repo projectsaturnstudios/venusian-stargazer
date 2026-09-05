@@ -18,6 +18,8 @@ use ProjectSaturnStudios\Stargazer\DONKI\Enums\DonkiNotificationType;
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
 use ProjectSaturnStudios\Stargazer\NasaApiService;
 use ProjectSaturnStudios\Stargazer\PendingNasaRequest;
+use Voyager\Contracts\IOPools\Completion;
+use Voyager\IOPools\DTO\HttpResult;
 
 class DonkiAPIService extends NasaApiService
 {
@@ -116,6 +118,41 @@ class DonkiAPIService extends NasaApiService
                 'startDate' => $from,
                 'endDate' => $to,
             ], $extra)),
+            envelope: fn (HttpResult $result): Completion => static::resolveHttpResult($result, $dto),
         );
+    }
+
+    /**
+     * Shape the transport result into DONKI mail. Every endpoint answers a
+     * list; the endpoint's row DTO rides in as $dto.
+     *
+     * @param  class-string  $dto
+     */
+    protected static function resolveHttpResult(HttpResult $result, string $dto): Completion
+    {
+        if (! $result->ok || $result->status >= 400) {
+            return new DonkiFailed(
+                name: $result->name,
+                result: $result,
+                reason: $result->error ?? "DONKI answered status {$result->status}.",
+            );
+        }
+
+        $payload = json_decode($result->body, true);
+
+        if (! is_array($payload)) {
+            return new DonkiFailed(
+                name: $result->name,
+                result: $result,
+                reason: 'DONKI body was not JSON.',
+            );
+        }
+
+        $items = [];
+        foreach ($payload as $row) {
+            $items[] = $dto::fromArray((array) $row);
+        }
+
+        return new DonkiArrived($result->name, $items);
     }
 }

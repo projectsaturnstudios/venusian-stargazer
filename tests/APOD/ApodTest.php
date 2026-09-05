@@ -1,9 +1,13 @@
 <?php
 
 use ProjectSaturnStudios\Stargazer\APOD\DataObjects\AstronomyPicture;
+use ProjectSaturnStudios\Stargazer\NasaClient;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\PendingCall;
+use ProjectSaturnStudios\Stargazer\APOD\APODArrived;
+use ProjectSaturnStudios\Stargazer\APOD\APODFailed;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
+use Voyager\NutsAndBolts\DataObjects\Carbon;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
 beforeEach(function () {
@@ -33,6 +37,21 @@ it('builds a single-date APOD request and hydrates the captured fixture', functi
             && str_contains($url, 'date=2015-06-03')
             && str_contains($url, 'api_key=TEST_KEY');
     });
+});
+
+it('defaults a missing APOD date to today in the current timezone', function () {
+    $previous_timezone = date_default_timezone_get();
+    date_default_timezone_set('America/New_York');
+    Carbon::setTestNow(Carbon::parse('2026-09-04 02:00:00', 'UTC'));
+
+    try {
+        $pending = (new NasaClient(api_key: 'TEST_KEY'))->apod()->date();
+
+        expect($pending->query()['date'])->toBe('2026-09-03');
+    } finally {
+        Carbon::setTestNow();
+        date_default_timezone_set($previous_timezone);
+    }
 });
 
 it('builds an APOD date-range request and hydrates a Collection of pictures', function () {
@@ -74,17 +93,50 @@ it('builds an APOD count request and hydrates a Collection of pictures', functio
     });
 });
 
-it('returns a namespaced PendingCall from each APOD async() builder', function (string $method, array $args) {
-    $http = stargazerHttp();
-    [$driver, $pool] = stargazerPool();
+it('dispatches each APOD async() builder under its namespaced call name', function (string $method, array $args) {
+    [$dock, $driver] = stargazerDock();
 
-    $call = stargazerClient($http, $pool)->apod()->{$method}(...$args)->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->apod()->{$method}(...$args)->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.apod.'.$method)
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.apod.'.$method)
         ->and($driver->dispatched[0]['url'])->toContain('/planetary/apod');
 })->with([
     'date' => ['date', ['2015-06-03']],
     'range' => ['range', ['2015-06-03', '2015-06-04']],
     'count' => ['count', [2]],
 ]);
+
+it('mails APODArrived for a single-object date payload and a list payload alike', function () {
+    [$dock, $driver] = stargazerDock();
+    $client = stargazerClient(stargazerHttp(), $dock);
+
+    $client->apod()->date('2015-06-03')->async();
+    $driver->ready = [stargazerResult('stargazer.apod.date', stargazerFixture('APOD', 'date'))];
+    $dock->pump();
+
+    $single = $dock->drain()->sole();
+    expect($single)->toBeInstanceOf(APODArrived::class)
+        ->and($single->apods)->toHaveCount(1);
+
+    $client->apod()->count(2)->async();
+    $driver->ready = [stargazerResult('stargazer.apod.count', stargazerFixture('APOD', 'count'))];
+    $dock->pump();
+
+    $many = $dock->drain()->sole();
+    expect($many)->toBeInstanceOf(APODArrived::class)
+        ->and(count($many->apods))->toBeGreaterThan(1);
+});
+
+it('mails APODFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->apod()->date('2015-06-03')->async();
+    $driver->ready = [stargazerResult('stargazer.apod.date', '{"code":500}', status: 500)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(APODFailed::class)
+        ->and($mail->ok())->toBeFalse()
+        ->and($mail->reason)->toContain('500');
+});

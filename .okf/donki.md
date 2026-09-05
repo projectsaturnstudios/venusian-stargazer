@@ -1,19 +1,22 @@
 ---
 type: API Family
 title: DONKI
-description: Space Weather Database Of Notifications, Knowledge, Information — the reference Stargazer leaf.
+description: Space Weather Database Of Notifications, Knowledge, Information — list-of-rows envelope family.
 tags:
   - donki
   - space-weather
   - core
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-08-31
-  at: '2026-08-31T04:20:00Z'
+  by: cursor-grok-4.6/2026-09-04
+  at: '2026-09-04T03:15:00Z'
 sources:
   - id: service
     resource: src/DONKI/DonkiAPIService.php
     title: DonkiAPIService
+  - id: arrived
+    resource: src/DONKI/DonkiArrived.php
+    title: DonkiArrived mail
   - id: docs
     resource: https://api.nasa.gov/
     title: NASA Open APIs DONKI section
@@ -43,5 +46,14 @@ Call names are `stargazer.donki.<endpoint>`. Catalogs and notification types are
 
 The campaign example `NASA::donki()->cme('2026-07-01','2026-08-01')->get()` returns a Collection of `Cme` against the captured fixture.
 
+# Mail
+
+`async()` on every builder keeps the class-string hydrator and adds an envelope inside `donki()`. The dock drains `DonkiArrived` (`array $items` of the endpoint's row DTOs) or `DonkiFailed`.[^service][^arrived]
+
+# Related
+
+* [Async envelope pattern](/async-envelope-pattern.md) — EPIC-shaped list payload.
+
 [^service]: DonkiAPIService
+[^arrived]: DonkiArrived mail
 [^docs]: NASA Open APIs DONKI section

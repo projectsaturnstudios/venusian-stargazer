@@ -3,12 +3,11 @@
 use ProjectSaturnStudios\Stargazer\InSight\DataObjects\InsightSol;
 use ProjectSaturnStudios\Stargazer\InSight\DataObjects\InsightWeather;
 use ProjectSaturnStudios\Stargazer\InSight\Enums\InsightSeason;
+use ProjectSaturnStudios\Stargazer\InSight\InsightArrived;
+use ProjectSaturnStudios\Stargazer\InSight\InsightFailed;
 use ProjectSaturnStudios\Stargazer\NasaClient;
-use Voyager\Contracts\IOPools\HttpDriver;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\EventQueue;
-use Voyager\IOPools\HttpPool;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
 function insightFixture(string $file = 'weather.json'): array
@@ -29,31 +28,6 @@ function insightHttp(string $file = 'weather.json'): Factory
     Http::swap($http);
 
     return $http;
-}
-
-function insightPool(): array
-{
-    $driver = new class implements HttpDriver
-    {
-        public array $dispatched = [];
-
-        public function dispatch(string $name, string $method, string $url, array $headers, ?string $body): void
-        {
-            $this->dispatched[] = compact('name', 'method', 'url', 'headers', 'body');
-        }
-
-        public function harvest(): array
-        {
-            return [];
-        }
-
-        public function progress(): array
-        {
-            return [];
-        }
-    };
-
-    return [$driver, new HttpPool($driver, new EventQueue)];
 }
 
 beforeEach(function () {
@@ -118,17 +92,35 @@ it('hydrates InSight weather sols from the captured fixture', function () {
         ->and($weather->validity->forSol('259')->temperature->valid)->toBeTrue();
 });
 
-it('returns a namespaced PendingCall from InSight async()', function () {
-    $http = insightHttp();
-    [$driver, $pool] = insightPool();
+it('mails InsightArrived through the dock from async()', function () {
+    [$dock, $driver] = stargazerDock();
 
-    $call = (new NasaClient(api_key: 'TEST_KEY', http: $http, pool: $pool))
-        ->insight()
-        ->weather()
-        ->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->insight()->weather()->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.insight.weather')
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.insight.weather')
         ->and($driver->dispatched[0]['url'])->toContain('insight_weather')
         ->and($driver->dispatched[0]['url'])->toContain('feedtype=json');
+
+    $driver->ready = [stargazerResult('stargazer.insight.weather', insightFixture())];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(InsightArrived::class)
+        ->and($mail->weather->solKeys)->not->toBeEmpty()
+        ->and($mail->ok())->toBeTrue()
+        ->and($presumption->settled())->toBeTrue();
+});
+
+it('mails InsightFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->insight()->weather()->async();
+    $driver->ready = [stargazerResult('stargazer.insight.weather', 'gone', status: 503)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(InsightFailed::class)
+        ->and($mail->ok())->toBeFalse()
+        ->and($mail->reason)->toContain('503');
 });

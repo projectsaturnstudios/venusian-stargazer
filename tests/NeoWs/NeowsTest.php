@@ -3,8 +3,10 @@
 use ProjectSaturnStudios\Stargazer\NeoWs\DataObjects\NearEarthObject;
 use ProjectSaturnStudios\Stargazer\NeoWs\DataObjects\NeoBrowse;
 use ProjectSaturnStudios\Stargazer\NeoWs\DataObjects\NeoFeed;
+use ProjectSaturnStudios\Stargazer\NeoWs\NeowsArrived;
+use ProjectSaturnStudios\Stargazer\NeoWs\NeowsFailed;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
 beforeEach(function () {
@@ -74,17 +76,44 @@ it('builds the NeoWs browse URL and hydrates page metadata from the fixture', fu
     });
 });
 
-it('returns a namespaced PendingCall from each NeoWs async() builder', function (string $method, array $args, string $path) {
-    $http = stargazerHttp();
-    [$driver, $pool] = stargazerPool();
+it('dispatches each NeoWs async() builder under its namespaced call name', function (string $method, array $args, string $path) {
+    [$dock, $driver] = stargazerDock();
 
-    $call = stargazerClient($http, $pool)->neows()->{$method}(...$args)->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->neows()->{$method}(...$args)->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.neows.'.$method)
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.neows.'.$method)
         ->and($driver->dispatched[0]['url'])->toContain($path);
 })->with([
     'feed' => ['feed', ['2015-09-07', '2015-09-08'], '/neo/rest/v1/feed'],
     'lookup' => ['lookup', ['3542519'], '/neo/rest/v1/neo/3542519'],
     'browse' => ['browse', [0, 1], '/neo/rest/v1/neo/browse'],
 ]);
+
+it('mails NeowsArrived carrying the hydrated page through the dock', function () {
+    [$dock, $driver] = stargazerDock();
+
+    $presumption = stargazerClient(stargazerHttp(), $dock)->neows()->feed('2015-09-07', '2015-09-08')->async();
+
+    $driver->ready = [stargazerResult('stargazer.neows.feed', stargazerFixture('NeoWs', 'feed'))];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(NeowsArrived::class)
+        ->and($mail->page)->toBeInstanceOf(NeoFeed::class)
+        ->and($mail->page->near_earth_objects->get('2015-09-08')->first()->id)->toBe('2465633')
+        ->and($presumption->settled())->toBeTrue();
+});
+
+it('mails NeowsFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->neows()->feed()->async();
+    $driver->ready = [stargazerResult('stargazer.neows.feed', 'gone', status: 502)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(NeowsFailed::class)
+        ->and($mail->ok())->toBeFalse()
+        ->and($mail->reason)->toContain('502');
+});

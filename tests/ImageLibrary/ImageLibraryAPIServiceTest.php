@@ -8,8 +8,11 @@ use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageLocation;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageSearchItem;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageSearchPage;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\Enums\ImageMediaType;
+use ProjectSaturnStudios\Stargazer\ImageLibrary\ImageLibraryArrived;
+use ProjectSaturnStudios\Stargazer\ImageLibrary\ImageLibraryFailed;
+use ProjectSaturnStudios\Stargazer\ImageLibrary\ImageSidecarReady;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
@@ -138,21 +141,70 @@ it('retrieves an Image Library captions location from the captured fixture', fun
     });
 });
 
-it('returns a namespaced PendingCall from Image Library async()', function () {
-    $http = stargazerHttp();
-    $http->fake(fn () => Factory::response(stargazerFixture('ImageLibrary', 'search')));
-    [$driver, $pool] = stargazerPool();
+it('dispatches each Image Library async() builder under its namespaced call name', function (string $method, array $args, string $path, ?string $query = null) {
+    [$dock, $driver] = stargazerDock();
 
-    $call = stargazerClient($http, $pool)
-        ->imageLibrary()
-        ->search('apollo 11')
-        ->media_type('image')
-        ->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->imageLibrary()->{$method}(...$args)->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.imagelibrary.search')
-        ->and($driver->dispatched[0]['method'])->toBe('GET')
-        ->and($driver->dispatched[0]['url'])->toContain('/search')
-        ->and($driver->dispatched[0]['url'])->toContain('q=apollo+11')
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.imagelibrary.'.$method)
+        ->and($driver->dispatched[0]['url'])->toContain($path)
         ->and($driver->dispatched[0]['url'])->not->toContain('api_key=');
+
+    if (! is_null($query)) {
+        expect($driver->dispatched[0]['url'])->toContain($query);
+    }
+})->with([
+    'search' => ['search', ['apollo 11'], '/search', 'q=apollo+11'],
+    'asset' => ['asset', ['as11-40-5874'], '/asset/as11-40-5874'],
+    'metadata' => ['metadata', ['as11-40-5874'], '/metadata/as11-40-5874'],
+    'captions' => ['captions', ['172_ISS-Slosh'], '/captions/172_ISS-Slosh'],
+]);
+
+it('mails ImageLibraryArrived carrying the hydrated page through the dock', function () {
+    [$dock, $driver] = stargazerDock();
+
+    $presumption = stargazerClient(stargazerHttp(), $dock)->imageLibrary()->search('apollo 11')->async();
+
+    $driver->ready = [stargazerResult('stargazer.imagelibrary.search', stargazerFixture('ImageLibrary', 'search'))];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(ImageLibraryArrived::class)
+        ->and($mail->page)->toBeInstanceOf(ImageSearchPage::class)
+        ->and($mail->page->items->first()->data->first()->nasaId)->toBe('jsc2007e034221')
+        ->and($presumption->settled())->toBeTrue();
+});
+
+it('mails ImageLibraryFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->imageLibrary()->search('apollo 11')->async();
+    $driver->ready = [stargazerResult('stargazer.imagelibrary.search', 'gone', status: 502)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(ImageLibraryFailed::class)
+        ->and($mail->ok())->toBeFalse()
+        ->and($mail->reason)->toContain('502');
+});
+
+it('follows a location link with fetchAsync and mails ImageSidecarReady', function () {
+    [$dock, $driver] = stargazerDock();
+
+    $location = ImageLocation::fromArray(stargazerFixture('ImageLibrary', 'metadata'));
+    $presumption = $location->fetchAsync();
+
+    $name = 'stargazer.imagelibrary.sidecar.'.crc32($location->location);
+    expect($presumption->name)->toBe($name)
+        ->and($driver->dispatched[0]['url'])->toBe($location->location)
+        ->and($location->fetchAsync())->toBe($presumption);
+
+    $driver->ready = [stargazerResult($name, 'SIDECARBYTES')];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(ImageSidecarReady::class)
+        ->and($mail->location)->toBe($location)
+        ->and($mail->result->body)->toBe('SIDECARBYTES');
 });

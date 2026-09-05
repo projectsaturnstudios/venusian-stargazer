@@ -3,9 +3,14 @@
 namespace ProjectSaturnStudios\Stargazer\EPIC\DataObjects;
 
 use ProjectSaturnStudios\Stargazer\Contracts\HydratesFromArray;
+use ProjectSaturnStudios\Stargazer\EPIC\EpicImageFailed;
+use ProjectSaturnStudios\Stargazer\EPIC\EpicImageReady;
 use ProjectSaturnStudios\Stargazer\EPIC\Enums\EpicCollection;
 use ProjectSaturnStudios\Stargazer\EPIC\Enums\EpicImageType;
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
+use Voyager\Contracts\IOPools\Completion;
+use Voyager\IOPools\DTO\HttpResult;
+use Voyager\IOPools\Presumption;
 
 final readonly class EpicImage implements HydratesFromArray
 {
@@ -66,5 +71,33 @@ final readonly class EpicImage implements HydratesFromArray
         return rtrim(NasaURL::EPIC->value, '/').'/archive/'
             .$collection->value.'/'.$year.'/'.$month.'/'.$day.'/'
             .$type->value.'/'.$this->image.'.'.$extension;
+    }
+
+    /**
+     * Follow this image's archive link through the io pool. The result
+     * arrives as mail — EpicImageReady with the bytes, EpicImageFailed
+     * when the conversation goes sour — so a sketch listens instead of
+     * plumbing HTTP. Answers the Presumption for hooks (progress and all),
+     * or the in-flight one when this image is already downloading.
+     */
+    public function renderAsync(
+        EpicCollection $collection,
+        EpicImageType $type = EpicImageType::PNG,
+    ): Presumption {
+        $extension = $type === EpicImageType::PNG ? 'png' : 'jpg';
+        $name = "stargazer.epic.image.{$this->identifier}";
+        $http = app('io-pool')->http();
+
+        if (! is_null($in_flight = $http->inFlight($name))) {
+            return $in_flight;
+        }
+
+        return $http->fetch(
+            $name,
+            $this->archiveUrl($collection, $type),
+            envelope: fn (HttpResult $result): Completion => ($result->ok && $result->status < 400)
+                ? new EpicImageReady($this, $result, $extension)
+                : new EpicImageFailed($this, $result, $result->error ?? "Archive answered status {$result->status}."),
+        );
     }
 }

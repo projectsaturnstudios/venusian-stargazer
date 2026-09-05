@@ -11,10 +11,12 @@ use ProjectSaturnStudios\Stargazer\DONKI\DataObjects\Notification;
 use ProjectSaturnStudios\Stargazer\DONKI\DataObjects\RadiationBeltEnhancement;
 use ProjectSaturnStudios\Stargazer\DONKI\DataObjects\SolarEnergeticParticle;
 use ProjectSaturnStudios\Stargazer\DONKI\DataObjects\WsaEnlilSimulation;
+use ProjectSaturnStudios\Stargazer\DONKI\DonkiArrived;
+use ProjectSaturnStudios\Stargazer\DONKI\DonkiFailed;
 use ProjectSaturnStudios\Stargazer\DONKI\Enums\DonkiCatalog;
 use ProjectSaturnStudios\Stargazer\DONKI\Enums\DonkiNotificationType;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\PendingCall;
+use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
 use Voyager\NutsAndBolts\MagicAliases\Http;
 
@@ -186,14 +188,13 @@ it('hydrates WSA-ENLIL cone inputs from the captured fixture', function () {
         ->and($sim->estimatedShockArrivalTime)->toBeNull();
 });
 
-it('returns a namespaced PendingCall from each DONKI async() builder', function (string $method, string $path) {
-    $http = stargazerHttp();
-    [$driver, $pool] = stargazerPool();
+it('dispatches each DONKI async() builder under its namespaced call name', function (string $method, string $path) {
+    [$dock, $driver] = stargazerDock();
 
-    $call = stargazerClient($http, $pool)->donki()->{$method}('2026-07-01', '2026-08-01')->async();
+    $presumption = stargazerClient(stargazerHttp(), $dock)->donki()->{$method}('2026-07-01', '2026-08-01')->async();
 
-    expect($call)->toBeInstanceOf(PendingCall::class)
-        ->and($call->name)->toBe('stargazer.donki.'.$method)
+    expect($presumption)->toBeInstanceOf(Presumption::class)
+        ->and($presumption->name)->toBe('stargazer.donki.'.$method)
         ->and($driver->dispatched[0]['method'])->toBe('GET')
         ->and($driver->dispatched[0]['url'])->toContain('/DONKI/'.$path)
         ->and($driver->dispatched[0]['url'])->toContain('api_key=TEST_KEY');
@@ -210,3 +211,31 @@ it('returns a namespaced PendingCall from each DONKI async() builder', function 
     'wsaEnlilSimulations' => ['wsaEnlilSimulations', 'WSAEnlilSimulations'],
     'notifications' => ['notifications', 'notifications'],
 ]);
+
+it('mails DonkiArrived carrying hydrated rows through the dock', function () {
+    [$dock, $driver] = stargazerDock();
+
+    $presumption = stargazerClient(stargazerHttp(), $dock)->donki()->cme('2026-07-01', '2026-08-01')->async();
+
+    $driver->ready = [stargazerResult('stargazer.donki.cme', stargazerFixture('DONKI', 'cme'))];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(DonkiArrived::class)
+        ->and($mail->items[0])->toBeInstanceOf(Cme::class)
+        ->and($mail->items[0]->activityID)->toBe('2016-09-02T06:18:00-CME-001')
+        ->and($presumption->settled())->toBeTrue();
+});
+
+it('mails DonkiFailed on a sad conversation', function () {
+    [$dock, $driver] = stargazerDock();
+
+    stargazerClient(stargazerHttp(), $dock)->donki()->cme('2026-07-01', '2026-08-01')->async();
+    $driver->ready = [stargazerResult('stargazer.donki.cme', 'gone', status: 502)];
+    $dock->pump();
+
+    $mail = $dock->drain()->sole();
+    expect($mail)->toBeInstanceOf(DonkiFailed::class)
+        ->and($mail->ok())->toBeFalse()
+        ->and($mail->reason)->toContain('502');
+});

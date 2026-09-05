@@ -10,6 +10,8 @@ use ProjectSaturnStudios\Stargazer\EONET\DataObjects\EonetMagnitudesPage;
 use ProjectSaturnStudios\Stargazer\EONET\DataObjects\EonetSourcesPage;
 use ProjectSaturnStudios\Stargazer\NasaApiService;
 use ProjectSaturnStudios\Stargazer\PendingNasaRequest;
+use Voyager\Contracts\IOPools\Completion;
+use Voyager\IOPools\DTO\HttpResult;
 
 class EonetAPIService extends NasaApiService
 {
@@ -52,6 +54,36 @@ class EonetAPIService extends NasaApiService
             $path,
             'stargazer.eonet.'.$endpoint,
             $dto,
+            envelope: fn (HttpResult $result): Completion => static::resolveHttpResult($result, $dto),
         );
+    }
+
+    /**
+     * Shape the transport result into EONET mail. Every endpoint answers
+     * one page object; the endpoint's page DTO rides in as $dto.
+     *
+     * @param  class-string  $dto
+     */
+    protected static function resolveHttpResult(HttpResult $result, string $dto): Completion
+    {
+        if (! $result->ok || $result->status >= 400) {
+            return new EonetFailed(
+                name: $result->name,
+                result: $result,
+                reason: $result->error ?? "EONET answered status {$result->status}.",
+            );
+        }
+
+        $payload = json_decode($result->body, true);
+
+        if (! is_array($payload)) {
+            return new EonetFailed(
+                name: $result->name,
+                result: $result,
+                reason: 'EONET body was not JSON.',
+            );
+        }
+
+        return new EonetArrived($result->name, $dto::fromArray($payload));
     }
 }
