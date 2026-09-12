@@ -29,7 +29,7 @@ class ImageLibraryAPIService extends NasaApiService
     {
         return $this->pending(
             base: NasaURL::IMAGE_LIBRARY,
-            path: 'asset/'.$nasa_id,
+            path: 'asset/'.rawurlencode($nasa_id),
             call_name: 'stargazer.imagelibrary.asset',
             hydrator: ImageAssetManifest::class,
             envelope: fn (HttpResult $result): Completion => static::resolveHttpResult($result, ImageAssetManifest::class),
@@ -40,7 +40,7 @@ class ImageLibraryAPIService extends NasaApiService
     {
         return $this->pending(
             base: NasaURL::IMAGE_LIBRARY,
-            path: 'metadata/'.$nasa_id,
+            path: 'metadata/'.rawurlencode($nasa_id),
             call_name: 'stargazer.imagelibrary.metadata',
             hydrator: ImageLocation::class,
             envelope: fn (HttpResult $result): Completion => static::resolveHttpResult($result, ImageLocation::class),
@@ -51,7 +51,7 @@ class ImageLibraryAPIService extends NasaApiService
     {
         return $this->pending(
             base: NasaURL::IMAGE_LIBRARY,
-            path: 'captions/'.$nasa_id,
+            path: 'captions/'.rawurlencode($nasa_id),
             call_name: 'stargazer.imagelibrary.captions',
             hydrator: ImageLocation::class,
             envelope: fn (HttpResult $result): Completion => static::resolveHttpResult($result, ImageLocation::class),

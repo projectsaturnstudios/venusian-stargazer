@@ -73,7 +73,13 @@ class PendingNasaRequest
 
     public function async(): Presumption
     {
-        return $this->resolvePool()->http()->call(
+        $http = $this->pool()->http();
+
+        if (is_null($http)) {
+            throw StargazerException::httpPoolNotBound();
+        }
+
+        return $http->call(
             name: $this->call_name,
             url: $this->absoluteUrl(),
             method: 'GET',
@@ -81,16 +87,31 @@ class PendingNasaRequest
         );
     }
 
-    public function url(): string
+    protected function pool(): PoolService
     {
-        $base = rtrim($this->base->value, '/');
-        $path = ltrim($this->path, '/');
-
-        if ($path === '') {
-            return $base;
+        if (! is_null($this->io_pool)) {
+            return $this->io_pool;
         }
 
-        return $base.'/'.$path;
+        $vessel = MagicAlias::getMagicAliasApplication();
+        if (! is_null($vessel) && $vessel->bound('io-pool')) {
+            return $vessel->make('io-pool');
+        }
+
+        throw StargazerException::httpPoolNotBound();
+    }
+
+    public function url(): string
+    {
+        $path = ltrim($this->path, '/');
+
+        // A pathless request keeps the base verbatim — some hosts 404
+        // without their declared trailing slash (InSight).
+        if ($path === '') {
+            return $this->base->value;
+        }
+
+        return rtrim($this->base->value, '/').'/'.$path;
     }
 
     /**
@@ -171,30 +192,6 @@ class PendingNasaRequest
         }
 
         throw StargazerException::httpClientUnavailable();
-    }
-
-    protected function resolvePool(): PoolService
-    {
-        if (! is_null($this->io_pool)) {
-            return $this->io_pool;
-        }
-
-        $vessel = MagicAlias::getMagicAliasApplication();
-        if (! is_null($vessel) && $vessel->bound(HttpPool::class)) {
-            return $vessel->make(HttpPool::class);
-        }
-
-        if (function_exists('app')) {
-            try {
-                $app = app();
-                if (! is_null($app) && $app->bound(HttpPool::class)) {
-                    return $app->make(HttpPool::class);
-                }
-            } catch (\Throwable) {
-            }
-        }
-
-        throw StargazerException::httpPoolNotBound();
     }
 
     protected function hydrate(mixed $payload): mixed

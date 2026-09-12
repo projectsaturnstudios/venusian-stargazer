@@ -92,7 +92,7 @@ it('hydrates EPIC natural imagery metadata from the captured fixture', function 
         ->and($image->attitude->q3)->toBe($first['attitude_quaternions']['q3'])
         ->and($image->coords->centroid->lat)->toBe($first['coords']['centroid_coordinates']['lat'])
         ->and($image->archiveUrl(EpicCollection::NATURAL, EpicImageType::PNG))
-        ->toBe('https://api.nasa.gov/EPIC/archive/natural/2015/10/31/png/epic_1b_20151031003633.png');
+        ->toBe('https://epic.gsfc.nasa.gov/archive/natural/2015/10/31/png/epic_1b_20151031003633.png');
 });
 
 it('builds the EPIC enhanced metadata URL and hydrates the captured fixture', function () {

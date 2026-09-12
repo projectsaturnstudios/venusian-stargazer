@@ -43,9 +43,12 @@ final readonly class ImageLocation implements HydratesFromArray
             return $in_flight;
         }
 
+        // Library hrefs carry raw spaces (nasa_ids like "Webb First Images");
+        // curl refuses them, so encode at the wire. The name and the DTO keep
+        // the raw location — identity stays what the manifest said.
         return $http->fetch(
             $name,
-            $this->location,
+            str_replace(' ', '%20', $this->location),
             envelope: fn (HttpResult $result): Completion => ($result->ok && $result->status < 400)
                 ? new ImageSidecarReady($this, $result)
                 : new ImageSidecarFailed($this, $result, $result->error ?? "Sidecar answered status {$result->status}."),

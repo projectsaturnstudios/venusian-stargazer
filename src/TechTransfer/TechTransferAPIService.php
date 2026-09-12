@@ -31,7 +31,7 @@ class TechTransferAPIService extends NasaApiService
     {
         return $this->pending(
             base: NasaURL::TECHTRANSFER,
-            path: $catalog->value,
+            path: $catalog->value.'/',
             call_name: 'stargazer.techtransfer.'.$catalog->value,
             hydrator: TechTransferPage::class,
             query: [$parameter => $query],

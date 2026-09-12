@@ -9,8 +9,15 @@ enum NasaURL: string
     case DONKI = 'https://api.nasa.gov/DONKI';
     case EONET = 'https://eonet.gsfc.nasa.gov/api/v3';
     case EPIC = 'https://api.nasa.gov/EPIC';
-    case INSIGHT = 'https://api.nasa.gov/insight_weather';
-    case TECHTRANSFER = 'https://api.nasa.gov/techtransfer';
+
+    /** The keyless archive mirror — api.nasa.gov/EPIC/archive 403s without a key. */
+    case EPIC_ARCHIVE = 'https://epic.gsfc.nasa.gov/archive';
+
+    /** The trailing slash is load-bearing: the keyed host 404s without it. */
+    case INSIGHT = 'https://api.nasa.gov/insight_weather/';
+
+    /** api.nasa.gov/techtransfer 302s here and strips the path on the way. */
+    case TECHTRANSFER = 'https://technology.nasa.gov/api/api';
     case TLE = 'https://tle.ivanstanojevic.me/api';
     case IMAGE_LIBRARY = 'https://images-api.nasa.gov';
     case GIBS = 'https://gibs.earthdata.nasa.gov';

@@ -68,7 +68,7 @@ final readonly class EpicImage implements HydratesFromArray
         $day = $parts[2] ?? '';
         $extension = $type === EpicImageType::PNG ? 'png' : 'jpg';
 
-        return rtrim(NasaURL::EPIC->value, '/').'/archive/'
+        return rtrim(NasaURL::EPIC_ARCHIVE->value, '/').'/'
             .$collection->value.'/'.$year.'/'.$month.'/'.$day.'/'
             .$type->value.'/'.$this->image.'.'.$extension;
     }

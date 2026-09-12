@@ -74,9 +74,10 @@ it('searches TechTransfer patents and hydrates the captured fixture', function (
     $http->assertSent(function ($request) {
         $url = $request->url();
 
-        return str_contains($url, '/techtransfer/patent')
+        // technology.nasa.gov serves TechTransfer keyless — no api_key rides.
+        return str_contains($url, 'technology.nasa.gov/api/api/patent/')
             && str_contains($url, 'patent=engine')
-            && str_contains($url, 'api_key=TEST_KEY');
+            && ! str_contains($url, 'api_key=');
     });
 });
 
@@ -94,7 +95,7 @@ it('searches TechTransfer software and hydrates the captured fixture', function 
     $http->assertSent(function ($request) {
         $url = $request->url();
 
-        return str_contains($url, '/techtransfer/software')
+        return str_contains($url, '/api/api/software/')
             && str_contains($url, 'software=guidance');
     });
 });
@@ -110,7 +111,7 @@ it('searches TechTransfer spinoffs and hydrates the captured fixture', function 
     $http->assertSent(function ($request) {
         $url = $request->url();
 
-        return str_contains($url, '/techtransfer/spinoff')
+        return str_contains($url, '/api/api/spinoff/')
             && (str_contains($url, 'Spinoff=battery') || str_contains($url, 'spinoff=battery'));
     });
 });
@@ -125,9 +126,9 @@ it('dispatches each TechTransfer async() builder under its namespaced call name'
         ->and($driver->dispatched[0]['url'])->toContain($path)
         ->and($driver->dispatched[0]['url'])->toContain($parameter.'='.$query);
 })->with([
-    'patent' => ['patent', 'engine', '/techtransfer/patent', 'patent'],
-    'software' => ['software', 'guidance', '/techtransfer/software', 'software'],
-    'spinoff' => ['spinoff', 'battery', '/techtransfer/spinoff', 'Spinoff'],
+    'patent' => ['patent', 'engine', '/api/api/patent/', 'patent'],
+    'software' => ['software', 'guidance', '/api/api/software/', 'software'],
+    'spinoff' => ['spinoff', 'battery', '/api/api/spinoff/', 'Spinoff'],
 ]);
 
 it('mails TechTransferArrived carrying the hydrated page through the dock', function () {
