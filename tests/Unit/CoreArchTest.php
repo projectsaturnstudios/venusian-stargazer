@@ -17,9 +17,8 @@ use ProjectSaturnStudios\Stargazer\NasaApiService;
 use ProjectSaturnStudios\Stargazer\NasaClient;
 use ProjectSaturnStudios\Stargazer\PendingNasaRequest;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
-use Voyager\NutsAndBolts\MagicAliases\Http;
+use Voyager\Contracts\IOPools\Promise;
 
 final readonly class CoreArchSampleRecord implements HydratesFromArray
 {
@@ -36,23 +35,6 @@ final readonly class CoreArchSampleRecord implements HydratesFromArray
         );
     }
 }
-
-function coreArchHttp(): Factory
-{
-    $http = new Factory;
-    $http->preventStrayRequests();
-    Http::swap($http);
-
-    return $http;
-}
-
-beforeEach(function () {
-    Http::clearResolvedInstances();
-});
-
-afterEach(function () {
-    Http::clearResolvedInstances();
-});
 
 it('exposes NotYetSupportedException as a StargazerException', function () {
     expect(NotYetSupportedException::forApi('GIBS'))
@@ -75,7 +57,7 @@ it('exposes every core API accessor on NasaClient', function () {
 });
 
 it('hydrates a list endpoint into a Collection of DTOs via get()', function () {
-    $http = coreArchHttp();
+    $http = stargazerHttp();
     $http->fake(function () {
         return Factory::response([
             ['id' => 'a', 'name' => 'alpha'],
@@ -109,7 +91,7 @@ it('hydrates a list endpoint into a Collection of DTOs via get()', function () {
 });
 
 it('hydrates an object payload into a single DTO via fromArray()', function () {
-    $http = coreArchHttp();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(['id' => 'solo', 'name' => 'one']));
 
     $result = (new PendingNasaRequest(
@@ -126,7 +108,7 @@ it('hydrates an object payload into a single DTO via fromArray()', function () {
 });
 
 it('appends api_key only for api.nasa.gov hosts', function () {
-    $http = coreArchHttp();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(['id' => '1', 'name' => 'open']));
 
     (new PendingNasaRequest(
@@ -148,11 +130,11 @@ it('appends api_key only for api.nasa.gov hosts', function () {
     });
 });
 
-it('returns a namespaced Presumption from async() when a pool is bound', function () {
-    $http = coreArchHttp();
-    [$dock, $driver] = stargazerDock();
+it('returns a loop promise from async() that fulfils with hydrated data', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response([['id' => '1', 'name' => 'alpha']]));
 
-    $presumption = (new PendingNasaRequest(
+    $promise = (new PendingNasaRequest(
         base: NasaURL::DONKI,
         path: 'CME',
         call_name: 'stargazer.donki.cme',
@@ -160,30 +142,27 @@ it('returns a namespaced Presumption from async() when a pool is bound', functio
         query: ['startDate' => '2026-07-01'],
         api_key: 'TEST_KEY',
         http: $http,
-        io_pool: $dock,
     ))->async();
 
-    expect($presumption)->toBeInstanceOf(Presumption::class)
-        ->and($presumption->name)->toBe('stargazer.donki.cme')
-        ->and($driver->dispatched[0]['method'])->toBe('GET')
-        ->and($driver->dispatched[0]['url'])->toContain('/DONKI/CME')
-        ->and($driver->dispatched[0]['url'])->toContain('api_key=TEST_KEY');
+    expect($promise)->toBeInstanceOf(Promise::class)
+        ->and($promise->wait()->first()->name)->toBe('alpha');
+
+    $http->assertSent(fn ($request) => str_contains($request->url(), '/DONKI/CME')
+        && str_contains($request->url(), 'api_key=TEST_KEY'));
 });
 
-it('throws StargazerException from async() when no HttpPool is bound', function () {
-    $http = coreArchHttp();
-
+it('throws StargazerException from async() when no loop is bound', function () {
     expect(fn () => (new PendingNasaRequest(
         base: NasaURL::DONKI,
         path: 'CME',
         call_name: 'stargazer.donki.cme',
         hydrator: CoreArchSampleRecord::class,
-        http: $http,
-    ))->async())->toThrow(StargazerException::class, 'HttpPool');
+        http: stargazerHttp(loop: false),
+    ))->async())->toThrow(StargazerException::class, 'loop');
 });
 
 it('throws StargazerException when a sync request is not successful', function () {
-    $http = coreArchHttp();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(['error' => 'nope'], 500));
 
     expect(fn () => (new PendingNasaRequest(
@@ -197,7 +176,7 @@ it('throws StargazerException when a sync request is not successful', function (
 });
 
 it('hydrates through a closure when the caller supplies one', function () {
-    $http = coreArchHttp();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(['id' => 'z', 'name' => 'zeta']));
 
     $result = (new PendingNasaRequest(
@@ -214,7 +193,7 @@ it('hydrates through a closure when the caller supplies one', function () {
 });
 
 it('falls back to DEMO_KEY when no api_key is given for an api.nasa.gov host', function () {
-    $http = coreArchHttp();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(['id' => '1', 'name' => 'n']));
 
     (new PendingNasaRequest(
@@ -229,7 +208,7 @@ it('falls back to DEMO_KEY when no api_key is given for an api.nasa.gov host', f
 });
 
 it('lets fluent with() replace query params on the pending request', function () {
-    $http = coreArchHttp();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(['id' => '1', 'name' => 'n']));
 
     (new PendingNasaRequest(

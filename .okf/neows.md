@@ -1,27 +1,24 @@
 ---
 type: API Family
 title: NeoWs
-description: Near Earth Object Web Service feed, lookup, and browse — page-or-single envelope family.
+description: Near Earth Object Web Service feed, lookup, and browse — page-or-single family.
 tags:
   - neows
   - asteroids
   - core
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-09-04
-  at: '2026-09-04T03:15:00Z'
+  by: claude-opus-5-5
+  at: '2026-09-23T16:21:52Z'
 sources:
   - id: service
     resource: src/NeoWs/NeowsAPIService.php
     title: NeowsAPIService
-  - id: arrived
-    resource: src/NeoWs/NeowsArrived.php
-    title: NeowsArrived mail
 ---
 
 # Overview
 
-`NASA::neows()` talks to `NasaURL::NEOWS`. Feed and browse hydrate page objects; lookup hydrates one `NearEarthObject`.[^service]
+`nasa()->neows()` talks to `NasaURL::NEOWS`. Feed and browse hydrate page objects; lookup hydrates one `NearEarthObject`.[^service]
 
 # Endpoints
 
@@ -33,13 +30,12 @@ sources:
 
 Nested DTOs cover close approaches, estimated diameter, relative velocity, miss distance, and orbital data. Host is `api.nasa.gov`, so `api_key` is appended.
 
-# Mail
+# Async
 
-`async()` on every builder keeps the class-string hydrator and adds an envelope. The dock drains `NeowsArrived` (`$page` is `NeoFeed`, `NearEarthObject`, or `NeoBrowse`) or `NeowsFailed`.[^service][^arrived]
+`async()` fulfils with `NeoFeed`, `NearEarthObject`, or `NeoBrowse` — the same value `get()` returns. A non-success rejects with `StargazerException`.[^service]
 
 # Related
 
-* [Async envelope pattern](/async-envelope-pattern.md) — EONET-shaped page-or-single payload.
+* [Async lane](/async-seam.md) — page-or-single payload.
 
 [^service]: NeowsAPIService
-[^arrived]: NeowsArrived mail

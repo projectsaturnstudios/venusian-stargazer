@@ -1,15 +1,15 @@
 ---
 type: Reference
 title: Stargazer API coverage
-description: Core versus deferred status for every NasaURL host Stargazer catalogues. All nine core families are envelope-complete.
+description: Core versus deferred status for every NasaURL host Stargazer catalogues. Every core family has an async lane.
 tags:
   - coverage
   - nasa
   - status
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-09-04
-  at: '2026-09-04T03:15:00Z'
+  by: claude-opus-5-5
+  at: '2026-09-23T16:21:52Z'
 sources:
   - id: urls
     resource: src/Enums/NasaURL.php
@@ -17,30 +17,30 @@ sources:
   - id: api-nasa
     resource: https://api.nasa.gov/
     title: NASA Open APIs catalog
-  - id: envelope
-    resource: /async-envelope-pattern.md
-    title: Async envelope pattern
+  - id: seam
+    resource: /async-seam.md
+    title: Async lane
 ---
 
 # Overview
 
-`NasaURL` holds sixteen base URLs. Nine core families have builders, captured fixtures, Pest coverage, and hydrator/envelope lanes. Seven deferred families exist as stubs that throw `NotYetSupportedException`.[^urls][^api-nasa][^envelope]
+`NasaURL` holds sixteen base URLs. Nine core families have builders, captured fixtures, Pest coverage, and an async lane. Seven deferred families exist as stubs that throw `NotYetSupportedException`.[^urls][^api-nasa][^seam]
 
 # Core
 
-Every core row is envelope-complete: `async()` answers `<Family>Arrived` or `<Family>Failed`. Link-follow sidecars are noted where they exist.
+Every core family has an async lane: `async()` fulfils with what `get()` returns.
 
-| Family | `NasaURL` | Accessor | Envelope | Concept |
-|--------|-----------|----------|----------|---------|
-| DONKI | `DONKI` | `donki()` | complete (`DonkiArrived` / `DonkiFailed`) | [DONKI](/donki.md) |
-| NeoWs | `NEOWS` | `neows()` | complete (`NeowsArrived` / `NeowsFailed`) | [NeoWs](/neows.md) |
-| EONET | `EONET` (v3) | `eonet()` | complete (`EonetArrived` / `EonetFailed`) | [EONET](/eonet.md) |
-| APOD | `APOD` | `apod()` | complete (`APODArrived` / `APODFailed`; `renderAsync`) | [APOD](/apod.md) |
-| EPIC | `EPIC` | `epic()` | complete (`EpicArrived` / `EpicFailed`; `renderAsync`) | [EPIC](/epic.md) |
-| InSight | `INSIGHT` | `insight()` | complete (`InsightArrived` / `InsightFailed`) | [InSight](/insight.md) |
-| TLE | `TLE` | `tle()` | complete (`TleArrived` / `TleFailed`) | [TLE](/tle.md) |
-| TechTransfer | `TECHTRANSFER` | `techtransfer()` | complete (`TechTransferArrived` / `TechTransferFailed`) | [TechTransfer](/techtransfer.md) |
-| Image Library | `IMAGE_LIBRARY` | `imageLibrary()` | complete (`ImageLibraryArrived` / `ImageLibraryFailed`; `fetchAsync`) | [Image and Video Library](/image-library.md) |
+| Family | `NasaURL` | Accessor | Async | Concept |
+|--------|-----------|----------|-------|---------|
+| DONKI | `DONKI` | `donki()` | promise | [DONKI](/donki.md) |
+| NeoWs | `NEOWS` | `neows()` | promise | [NeoWs](/neows.md) |
+| EONET | `EONET` (v3) | `eonet()` | promise | [EONET](/eonet.md) |
+| APOD | `APOD` | `apod()` | promise | [APOD](/apod.md) |
+| EPIC | `EPIC` | `epic()` | promise | [EPIC](/epic.md) |
+| InSight | `INSIGHT` | `insight()` | promise | [InSight](/insight.md) |
+| TLE | `TLE` | `tle()` | promise | [TLE](/tle.md) |
+| TechTransfer | `TECHTRANSFER` | `techtransfer()` | promise | [TechTransfer](/techtransfer.md) |
+| Image Library | `IMAGE_LIBRARY` | `imageLibrary()` | promise | [Image and Video Library](/image-library.md) |
 
 # Deferred
 
@@ -60,4 +60,4 @@ TechTransfer `imageUrl` follow and Image Library `GET /album/{name}` are not in 
 
 [^urls]: NasaURL enum
 [^api-nasa]: NASA Open APIs catalog
-[^envelope]: Async envelope pattern
+[^seam]: Async lane

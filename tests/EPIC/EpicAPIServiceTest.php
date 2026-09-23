@@ -4,14 +4,11 @@ use ProjectSaturnStudios\Stargazer\EPIC\DataObjects\EpicAvailableDate;
 use ProjectSaturnStudios\Stargazer\EPIC\DataObjects\EpicImage;
 use ProjectSaturnStudios\Stargazer\EPIC\Enums\EpicCollection;
 use ProjectSaturnStudios\Stargazer\EPIC\Enums\EpicImageType;
-use ProjectSaturnStudios\Stargazer\EPIC\EpicArrived;
-use ProjectSaturnStudios\Stargazer\EPIC\EpicFailed;
-use ProjectSaturnStudios\Stargazer\EPIC\EpicImageReady;
+use ProjectSaturnStudios\Stargazer\Exceptions\StargazerException;
 use ProjectSaturnStudios\Stargazer\NasaClient;
+use Voyager\Contracts\IOPools\Promise;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
-use Voyager\NutsAndBolts\MagicAliases\Http;
 
 function epicFixture(string $file): array
 {
@@ -25,21 +22,11 @@ function epicFixture(string $file): array
 
 function epicHttp(string $file): Factory
 {
-    $http = new Factory;
-    $http->preventStrayRequests();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(epicFixture($file)));
-    Http::swap($http);
 
     return $http;
 }
-
-beforeEach(function () {
-    Http::clearResolvedInstances();
-});
-
-afterEach(function () {
-    Http::clearResolvedInstances();
-});
 
 it('builds the EPIC natural metadata URL for the most recent imagery', function () {
     $http = epicHttp('natural.json');
@@ -145,54 +132,53 @@ it('lists available enhanced dates from the captured fixture', function () {
     $http->assertSent(fn ($request) => str_contains($request->url(), '/EPIC/api/enhanced/available'));
 });
 
-it('mails EpicArrived carrying hydrated images through the dock', function () {
-    [$dock, $driver] = stargazerDock();
+it('sends each EPIC async() builder on the loop', function (string $method, array $args, string $path) {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response([]));
 
-    $presumption = stargazerClient(stargazerHttp(), $dock)->epic()->natural()->async();
+    $promise = stargazerClient($http)->epic()->{$method}(...$args)->async();
 
-    expect($presumption)->toBeInstanceOf(Presumption::class)
-        ->and($presumption->name)->toBe('stargazer.epic.natural')
-        ->and($driver->dispatched[0]['url'])->toContain('/EPIC/api/natural')
-        ->and($driver->dispatched[0]['url'])->toContain('api_key=TEST_KEY');
+    expect($promise)->toBeInstanceOf(Promise::class);
+    $http->loop()->until(fn () => $promise->settled());
+    $http->assertSent(fn ($request) => str_contains($request->url(), $path));
+})->with([
+    'natural' => ['natural', [], '/EPIC/api/natural'],
+    'enhanced' => ['enhanced', [], '/EPIC/api/enhanced'],
+    'naturalAvailable' => ['naturalAvailable', [], '/EPIC/api/natural/available'],
+]);
 
-    $driver->ready = [stargazerResult('stargazer.epic.natural', epicFixture('natural.json'))];
-    $dock->pump();
+it('fulfils the EPIC promise with hydrated data', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response(epicFixture('natural.json')));
 
-    $mail = $dock->drain()->sole();
-    expect($mail)->toBeInstanceOf(EpicArrived::class)
-        ->and($mail->items[0])->toBeInstanceOf(EpicImage::class)
-        ->and($presumption->settled())->toBeTrue();
+    $promise = stargazerClient($http)->epic()->natural()->async();
+    $result = $promise->wait();
+
+    expect($promise->fulfilled())->toBeTrue()
+        ->and($result)->toBeInstanceOf(Collection::class)
+        ->and($result->first())->toBeInstanceOf(EpicImage::class);
 });
 
-it('mails EpicFailed on a sad conversation', function () {
-    [$dock, $driver] = stargazerDock();
+it('rejects the EPIC promise on a sad conversation', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response('gone', 500));
 
-    stargazerClient(stargazerHttp(), $dock)->epic()->natural()->async();
-    $driver->ready = [stargazerResult('stargazer.epic.natural', 'gone', status: 500)];
-    $dock->pump();
-
-    $mail = $dock->drain()->sole();
-    expect($mail)->toBeInstanceOf(EpicFailed::class)
-        ->and($mail->reason)->toContain('500');
+    expect(fn () => stargazerClient($http)->epic()->natural()->async()->wait())
+        ->toThrow(StargazerException::class, '500');
 });
 
-it('follows an image link with renderAsync and mails EpicImageReady', function () {
-    [$dock, $driver] = stargazerDock();
+it('refuses async() without a loop', function () {
+    expect(fn () => stargazerClient(stargazerHttp(loop: false))->epic()->natural()->async())
+        ->toThrow(StargazerException::class, 'loop');
+});
+
+it('follows an image link with render() and fulfils with the bytes', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response('PNGBYTES'));
 
     $image = EpicImage::fromArray(epicFixture('natural.json')[0]);
-    $presumption = $image->renderAsync(EpicCollection::NATURAL, EpicImageType::PNG);
+    $response = $image->render(EpicCollection::NATURAL, EpicImageType::PNG)->wait();
 
-    $name = "stargazer.epic.image.{$image->identifier}";
-    expect($presumption->name)->toBe($name)
-        ->and($driver->dispatched[0]['url'])->toBe($image->archiveUrl(EpicCollection::NATURAL, EpicImageType::PNG))
-        ->and($image->renderAsync(EpicCollection::NATURAL))->toBe($presumption);
-
-    $driver->ready = [stargazerResult($name, 'PNGBYTES')];
-    $dock->pump();
-
-    $mail = $dock->drain()->sole();
-    expect($mail)->toBeInstanceOf(EpicImageReady::class)
-        ->and($mail->image)->toBe($image)
-        ->and($mail->extension)->toBe('png')
-        ->and($mail->result->body)->toBe('PNGBYTES');
+    expect($response->body())->toBe('PNGBYTES');
+    $http->assertSent(fn ($request) => $request->url() === $image->archiveUrl(EpicCollection::NATURAL, EpicImageType::PNG));
 });

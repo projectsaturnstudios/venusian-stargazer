@@ -1,22 +1,12 @@
 <?php
 
 use ProjectSaturnStudios\Stargazer\APOD\DataObjects\AstronomyPicture;
+use ProjectSaturnStudios\Stargazer\Exceptions\StargazerException;
 use ProjectSaturnStudios\Stargazer\NasaClient;
+use Voyager\Contracts\IOPools\Promise;
 use Voyager\Http\Client\Factory;
-use ProjectSaturnStudios\Stargazer\APOD\APODArrived;
-use ProjectSaturnStudios\Stargazer\APOD\APODFailed;
-use Voyager\IOPools\Presumption;
 use Voyager\NutsAndBolts\Collection;
 use Voyager\NutsAndBolts\DataObjects\Carbon;
-use Voyager\NutsAndBolts\MagicAliases\Http;
-
-beforeEach(function () {
-    Http::clearResolvedInstances();
-});
-
-afterEach(function () {
-    Http::clearResolvedInstances();
-});
 
 it('builds a single-date APOD request and hydrates the captured fixture', function () {
     $http = stargazerHttp();
@@ -93,50 +83,55 @@ it('builds an APOD count request and hydrates a Collection of pictures', functio
     });
 });
 
-it('dispatches each APOD async() builder under its namespaced call name', function (string $method, array $args) {
-    [$dock, $driver] = stargazerDock();
+it('sends each APOD async() builder on the loop', function (string $method, array $args, string $path) {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response([]));
 
-    $presumption = stargazerClient(stargazerHttp(), $dock)->apod()->{$method}(...$args)->async();
+    $promise = stargazerClient($http)->apod()->{$method}(...$args)->async();
 
-    expect($presumption)->toBeInstanceOf(Presumption::class)
-        ->and($presumption->name)->toBe('stargazer.apod.'.$method)
-        ->and($driver->dispatched[0]['url'])->toContain('/planetary/apod');
+    expect($promise)->toBeInstanceOf(Promise::class);
+    $http->loop()->until(fn () => $promise->settled());
+    $http->assertSent(fn ($request) => str_contains($request->url(), $path));
 })->with([
-    'date' => ['date', ['2015-06-03']],
-    'range' => ['range', ['2015-06-03', '2015-06-04']],
-    'count' => ['count', [2]],
+    'date' => ['date', ['2015-06-03',], '/planetary/apod'],
+    'range' => ['range', ['2015-06-03', '2015-06-04',], '/planetary/apod'],
+    'count' => ['count', [2,], '/planetary/apod'],
 ]);
 
-it('mails APODArrived for a single-object date payload and a list payload alike', function () {
-    [$dock, $driver] = stargazerDock();
-    $client = stargazerClient(stargazerHttp(), $dock);
+it('fulfils the APOD promise with hydrated data', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response(stargazerFixture('APOD', 'date')));
 
-    $client->apod()->date('2015-06-03')->async();
-    $driver->ready = [stargazerResult('stargazer.apod.date', stargazerFixture('APOD', 'date'))];
-    $dock->pump();
+    $promise = stargazerClient($http)->apod()->date('2015-06-03')->async();
+    $result = $promise->wait();
 
-    $single = $dock->drain()->sole();
-    expect($single)->toBeInstanceOf(APODArrived::class)
-        ->and($single->apods)->toHaveCount(1);
-
-    $client->apod()->count(2)->async();
-    $driver->ready = [stargazerResult('stargazer.apod.count', stargazerFixture('APOD', 'count'))];
-    $dock->pump();
-
-    $many = $dock->drain()->sole();
-    expect($many)->toBeInstanceOf(APODArrived::class)
-        ->and(count($many->apods))->toBeGreaterThan(1);
+    expect($promise->fulfilled())->toBeTrue()
+        ->and($result)->toBeInstanceOf(AstronomyPicture::class)
+        ->and($result->title)->toBe('Hyperion: Sponge Moon of Saturn');
 });
 
-it('mails APODFailed on a sad conversation', function () {
-    [$dock, $driver] = stargazerDock();
+it('rejects the APOD promise on a sad conversation', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response('gone', 500));
 
-    stargazerClient(stargazerHttp(), $dock)->apod()->date('2015-06-03')->async();
-    $driver->ready = [stargazerResult('stargazer.apod.date', '{"code":500}', status: 500)];
-    $dock->pump();
+    expect(fn () => stargazerClient($http)->apod()->date('2015-06-03')->async()->wait())
+        ->toThrow(StargazerException::class, '500');
+});
 
-    $mail = $dock->drain()->sole();
-    expect($mail)->toBeInstanceOf(APODFailed::class)
-        ->and($mail->ok())->toBeFalse()
-        ->and($mail->reason)->toContain('500');
+it('refuses async() without a loop', function () {
+    expect(fn () => stargazerClient(stargazerHttp(loop: false))->apod()->date('2015-06-03')->async())
+        ->toThrow(StargazerException::class, 'loop');
+});
+
+it('follows a picture link with render() and skips embed days', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response('JPGBYTES'));
+
+    $picture = AstronomyPicture::fromArray(stargazerFixture('APOD', 'date'));
+
+    expect($picture->render()->wait()->body())->toBe('JPGBYTES');
+    $http->assertSent(fn ($request) => $request->url() === $picture->url);
+
+    $embed = AstronomyPicture::fromArray(['date' => '2020-01-01', 'title' => 'x', 'media_type' => 'video', 'url' => 'https://www.youtube.com/embed/abc']);
+    expect($embed->render())->toBeNull();
 });

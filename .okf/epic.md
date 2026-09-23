@@ -1,30 +1,27 @@
 ---
 type: API Family
 title: EPIC
-description: DSCOVR Earth Polychromatic Imaging Camera — list-of-rows envelope family with archive link-follow.
+description: DSCOVR Earth Polychromatic Imaging Camera — list-of-rows family with archive link-follow.
 tags:
   - epic
   - earth
   - core
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-09-04
-  at: '2026-09-04T03:15:00Z'
+  by: claude-opus-5-5
+  at: '2026-09-23T16:21:52Z'
 sources:
   - id: service
     resource: src/EPIC/EpicAPIService.php
     title: EpicAPIService
-  - id: arrived
-    resource: src/EPIC/EpicArrived.php
-    title: EpicArrived mail
   - id: image
     resource: src/EPIC/DataObjects/EpicImage.php
-    title: EpicImage renderAsync sidecar
+    title: EpicImage render
 ---
 
 # Overview
 
-`NASA::epic()` uses `NasaURL::EPIC`. Natural and enhanced imagery share `EpicImage`; available-date lists hydrate `EpicAvailableDate`.[^service]
+`nasa()->epic()` uses `NasaURL::EPIC`. Natural and enhanced imagery share `EpicImage`; available-date lists hydrate `EpicAvailableDate`.[^service]
 
 # Endpoints
 
@@ -37,16 +34,15 @@ sources:
 
 `EpicImage::archiveUrl()` builds the archive PNG/JPG path from `NasaURL::EPIC` plus `EpicCollection` and `EpicImageType`. Host is `api.nasa.gov`, so `api_key` is appended.
 
-# Mail
+# Async
 
-`async()` on every builder keeps the class-string hydrator and adds an envelope. The dock drains `EpicArrived` (`array $items` of `EpicImage` or `EpicAvailableDate`) or `EpicFailed`.[^service][^arrived]
+`async()` fulfils with a list of `EpicImage` or `EpicAvailableDate`. A non-success rejects with `StargazerException`.[^service]
 
-`EpicImage::renderAsync()` follows the archive URL. Mail is `EpicImageReady` (`stash()` writes the bytes) or `EpicImageFailed`.[^image]
+`EpicImage::render()` follows the archive URL and returns `Promise<Response>`. `body()` is the bytes.[^image]
 
 # Related
 
-* [Async envelope pattern](/async-envelope-pattern.md) — list-of-rows payload plus DTO link-follow.
+* [Async lane](/async-seam.md) — list-of-rows payload plus DTO link-follow.
 
 [^service]: EpicAPIService
-[^arrived]: EpicArrived mail
-[^image]: EpicImage renderAsync sidecar
+[^image]: EpicImage render

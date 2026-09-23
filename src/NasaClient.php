@@ -20,7 +20,6 @@ use ProjectSaturnStudios\Stargazer\TLE\TleAPIService;
 use ProjectSaturnStudios\Stargazer\TechTransfer\TechTransferAPIService;
 use ProjectSaturnStudios\Stargazer\Techport\TechportAPIService;
 use ProjectSaturnStudios\Stargazer\Trek\TrekWmtsAPIService;
-use Voyager\Contracts\IOPools\PoolService;
 use Voyager\Http\Client\Factory;
 
 class NasaClient
@@ -28,7 +27,6 @@ class NasaClient
     public function __construct(
         protected ?string $api_key = null,
         protected ?Factory $http = null,
-        protected ?PoolService $io_pool = null,
     ) {}
 
     /**
@@ -41,7 +39,6 @@ class NasaClient
         string $call_name,
         Closure|string|null $hydrator = null,
         array $query = [],
-        ?Closure $envelope = null,
     ): PendingNasaRequest {
         return new PendingNasaRequest(
             base: $base,
@@ -51,8 +48,6 @@ class NasaClient
             query: $query,
             api_key: $this->api_key,
             http: $this->http,
-            io_pool: $this->io_pool,
-            envelope: $envelope,
         );
     }
 

@@ -6,17 +6,17 @@ use RuntimeException;
 
 class StargazerException extends RuntimeException
 {
-    public static function httpPoolNotBound(): self
+    public static function loopNotBound(): self
     {
         return new self(
-            'HttpPool is not bound. Register Voyager\\IOPools\\HttpPool in the container before calling async().',
+            'No event loop is bound to the Http client. async() needs the Voyager loop; call get() for a blocking request.',
         );
     }
 
     public static function httpClientUnavailable(): self
     {
         return new self(
-            'The Voyager Http client is not available. Bind Voyager\\Http\\Client\\Factory or swap Http before calling get().',
+            'The Voyager Http client is not available. Bind Voyager\\Http\\Client\\Factory as \'http\' or pass one to NasaClient.',
         );
     }
 

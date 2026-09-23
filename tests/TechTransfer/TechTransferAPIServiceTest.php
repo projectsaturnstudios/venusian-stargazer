@@ -1,13 +1,11 @@
 <?php
 
+use ProjectSaturnStudios\Stargazer\Exceptions\StargazerException;
 use ProjectSaturnStudios\Stargazer\NasaClient;
 use ProjectSaturnStudios\Stargazer\TechTransfer\DataObjects\TechTransferPage;
 use ProjectSaturnStudios\Stargazer\TechTransfer\DataObjects\TechTransferRecord;
-use ProjectSaturnStudios\Stargazer\TechTransfer\TechTransferArrived;
-use ProjectSaturnStudios\Stargazer\TechTransfer\TechTransferFailed;
+use Voyager\Contracts\IOPools\Promise;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\Presumption;
-use Voyager\NutsAndBolts\MagicAliases\Http;
 
 function techTransferFixture(string $file): array
 {
@@ -21,10 +19,8 @@ function techTransferFixture(string $file): array
 
 function techTransferHttp(string $file): Factory
 {
-    $http = new Factory;
-    $http->preventStrayRequests();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(techTransferFixture($file)));
-    Http::swap($http);
 
     return $http;
 }
@@ -45,14 +41,6 @@ function expectHydratedRecord(TechTransferRecord $record, array $row): void
         ->and($record->detailUrl)->toBe($row[11])
         ->and($record->score)->toBe($row[12]);
 }
-
-beforeEach(function () {
-    Http::clearResolvedInstances();
-});
-
-afterEach(function () {
-    Http::clearResolvedInstances();
-});
 
 it('searches TechTransfer patents and hydrates the captured fixture', function () {
     $payload = techTransferFixture('patent.json');
@@ -116,45 +104,42 @@ it('searches TechTransfer spinoffs and hydrates the captured fixture', function 
     });
 });
 
-it('dispatches each TechTransfer async() builder under its namespaced call name', function (string $method, string $query, string $path, string $parameter) {
-    [$dock, $driver] = stargazerDock();
+it('sends each TechTransfer async() builder on the loop', function (string $method, array $args, string $path) {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response([]));
 
-    $presumption = stargazerClient(stargazerHttp(), $dock)->techtransfer()->{$method}($query)->async();
+    $promise = stargazerClient($http)->techtransfer()->{$method}(...$args)->async();
 
-    expect($presumption)->toBeInstanceOf(Presumption::class)
-        ->and($presumption->name)->toBe('stargazer.techtransfer.'.$method)
-        ->and($driver->dispatched[0]['url'])->toContain($path)
-        ->and($driver->dispatched[0]['url'])->toContain($parameter.'='.$query);
+    expect($promise)->toBeInstanceOf(Promise::class);
+    $http->loop()->until(fn () => $promise->settled());
+    $http->assertSent(fn ($request) => str_contains($request->url(), $path));
 })->with([
-    'patent' => ['patent', 'engine', '/api/api/patent/', 'patent'],
-    'software' => ['software', 'guidance', '/api/api/software/', 'software'],
-    'spinoff' => ['spinoff', 'battery', '/api/api/spinoff/', 'Spinoff'],
+    'patent' => ['patent', ['engine',], '/api/api/patent/'],
+    'software' => ['software', ['guidance',], '/api/api/software/'],
+    'spinoff' => ['spinoff', ['battery',], '/api/api/spinoff/'],
 ]);
 
-it('mails TechTransferArrived carrying the hydrated page through the dock', function () {
-    [$dock, $driver] = stargazerDock();
+it('fulfils the TechTransfer promise with hydrated data', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response(techTransferFixture('patent.json')));
 
-    $presumption = stargazerClient(stargazerHttp(), $dock)->techtransfer()->patent('engine')->async();
+    $promise = stargazerClient($http)->techtransfer()->patent('engine')->async();
+    $result = $promise->wait();
 
-    $driver->ready = [stargazerResult('stargazer.techtransfer.patent', techTransferFixture('patent.json'))];
-    $dock->pump();
-
-    $mail = $dock->drain()->sole();
-    expect($mail)->toBeInstanceOf(TechTransferArrived::class)
-        ->and($mail->page)->toBeInstanceOf(TechTransferPage::class)
-        ->and($mail->page->results->first()->id)->toBe('64e71c1a64038afc1d0a01d2')
-        ->and($presumption->settled())->toBeTrue();
+    expect($promise->fulfilled())->toBeTrue()
+        ->and($result)->toBeInstanceOf(TechTransferPage::class)
+        ->and($result->results->first()->id)->toBe('64e71c1a64038afc1d0a01d2');
 });
 
-it('mails TechTransferFailed on a sad conversation', function () {
-    [$dock, $driver] = stargazerDock();
+it('rejects the TechTransfer promise on a sad conversation', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response('gone', 502));
 
-    stargazerClient(stargazerHttp(), $dock)->techtransfer()->patent('engine')->async();
-    $driver->ready = [stargazerResult('stargazer.techtransfer.patent', 'gone', status: 502)];
-    $dock->pump();
+    expect(fn () => stargazerClient($http)->techtransfer()->patent('engine')->async()->wait())
+        ->toThrow(StargazerException::class, '502');
+});
 
-    $mail = $dock->drain()->sole();
-    expect($mail)->toBeInstanceOf(TechTransferFailed::class)
-        ->and($mail->ok())->toBeFalse()
-        ->and($mail->reason)->toContain('502');
+it('refuses async() without a loop', function () {
+    expect(fn () => stargazerClient(stargazerHttp(loop: false))->techtransfer()->patent('engine')->async())
+        ->toThrow(StargazerException::class, 'loop');
 });

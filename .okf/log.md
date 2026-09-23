@@ -1,5 +1,8 @@
 # Update Log
 
+## 2026-09-23
+* **Update**: [Async lane](async-seam.md) — `async()` returns a loop promise of the `get()` DTOs; rejects with `StargazerException`; `render()`/`fetch()` return `Promise<Response>`. Envelope pattern concept deleted; mail classes gone. Family concepts, [API coverage](api-coverage.md), [getting started](getting-started.md) follow. `nasa()` replaces the `NASA` MagicAlias.
+
 ## 2026-09-04
 * **Update**: Envelope wrap — all nine core families are exemplars. [DONKI](donki.md), [NeoWs](neows.md), [TLE](tle.md), [TechTransfer](techtransfer.md), [APOD](apod.md), [EONET](eonet.md), [EPIC](epic.md), [InSight](insight.md), and [Image and Video Library](image-library.md) name Arrived/Failed (plus APOD/EPIC `renderAsync` and Image Library `fetchAsync`). [Async envelope pattern](async-envelope-pattern.md) dropped “remaining”; [API coverage](api-coverage.md) marks every core row envelope-complete. [Getting started](getting-started.md) now points at `src/MagicAliases/NASA.php` and the `'nasa'` accessor. Deferred stubs unchanged.
 * **Update**: [Image and Video Library](image-library.md) re-plated onto the hydrator/envelope lanes — `ImageLibraryArrived` / `ImageLibraryFailed` on search, asset, metadata, and captions; `ImageLocation::fetchAsync()` follows the `{ location }` pointer as `ImageSidecarReady` / `ImageSidecarFailed`; `NASA::imageLibrary()` is on the MagicAlias `@method` block.

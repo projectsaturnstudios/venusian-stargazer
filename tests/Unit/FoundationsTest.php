@@ -1,8 +1,7 @@
 <?php
 
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
-use ProjectSaturnStudios\Stargazer\MagicAliases\NASA;
-use Voyager\MagicAliases\MagicAlias;
+use ProjectSaturnStudios\Stargazer\NasaClient;
 
 it('catalogues every NASA host as an uppercase string-backed case', function () {
     foreach (NasaURL::cases() as $case) {
@@ -13,9 +12,8 @@ it('catalogues every NASA host as an uppercase string-backed case', function () 
     expect(NasaURL::EONET->value)->toBe('https://eonet.gsfc.nasa.gov/api/v3');
 });
 
-it('resolves the NASA magic alias to NasaClient', function () {
-    expect(is_subclass_of(NASA::class, MagicAlias::class))->toBeTrue();
+it('reaches the NasaClient through the nasa() helper', function () {
+    $GLOBALS['__stargazer_test_bindings'] = ['nasa' => $client = stargazerClient(stargazerHttp())];
 
-    $method = new ReflectionMethod(NASA::class, 'getMagicAliasAccessor');
-    expect($method->invoke(null))->toBe('nasa');
+    expect(nasa())->toBe($client)->toBeInstanceOf(NasaClient::class);
 });

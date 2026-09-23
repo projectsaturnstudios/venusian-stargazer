@@ -5,26 +5,19 @@ namespace ProjectSaturnStudios\Stargazer;
 use Closure;
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
 use ProjectSaturnStudios\Stargazer\Exceptions\StargazerException;
-use Voyager\Contracts\IOPools\Completion;
-use Voyager\Contracts\IOPools\PoolService;
+use Voyager\Contracts\IOPools\Promise;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\DTO\HttpResult;
-use Voyager\IOPools\Presumption;
-use Voyager\MagicAliases\MagicAlias;
+use Voyager\Http\Client\Response;
 use Voyager\NutsAndBolts\Collection;
-use Voyager\NutsAndBolts\MagicAliases\Http;
 
 class PendingNasaRequest
 {
     /**
-     * $hydrator shapes the sync lane: get() feeds it the decoded JSON and
-     * answers DTOs. $envelope shapes the async lane: the driver feeds it
-     * the HttpResult and the mail it answers rides the dock. Without an
-     * envelope, async() mails the raw HttpResult.
+     * One hydrator serves both lanes: get() blocks and answers DTOs;
+     * async() rides the event loop and answers a promise of the same DTOs.
      *
      * @param  array<string, mixed>  $query
      * @param  Closure(mixed):mixed|class-string|null  $hydrator
-     * @param  Closure(HttpResult):Completion|null  $envelope
      */
     public function __construct(
         protected NasaURL $base,
@@ -34,8 +27,6 @@ class PendingNasaRequest
         protected array $query = [],
         protected ?string $api_key = null,
         protected ?Factory $http = null,
-        protected ?PoolService $io_pool = null,
-        protected ?Closure $envelope = null,
     ) {}
 
     public function with(string $name, mixed $value): static
@@ -58,8 +49,27 @@ class PendingNasaRequest
 
     public function get(): mixed
     {
-        $response = $this->httpFactory()->get($this->url(), $this->query());
+        return $this->resolve($this->httpFactory()->get($this->url(), $this->query()));
+    }
 
+    /**
+     * Send on the event loop. The promise fulfils with what get() would
+     * have returned and rejects with what get() would have thrown.
+     */
+    public function async(): Promise
+    {
+        $http = $this->httpFactory();
+
+        if (is_null($http->loop())) {
+            throw StargazerException::loopNotBound();
+        }
+
+        return $http->async()->get($this->url(), $this->query())
+            ->then(fn (Response $response): mixed => $this->resolve($response));
+    }
+
+    protected function resolve(Response $response): mixed
+    {
         if (! $response->successful()) {
             throw StargazerException::requestFailed(
                 status: $response->status(),
@@ -69,36 +79,6 @@ class PendingNasaRequest
         }
 
         return $this->hydrate($response->json());
-    }
-
-    public function async(): Presumption
-    {
-        $http = $this->pool()->http();
-
-        if (is_null($http)) {
-            throw StargazerException::httpPoolNotBound();
-        }
-
-        return $http->call(
-            name: $this->call_name,
-            url: $this->absoluteUrl(),
-            method: 'GET',
-            envelope: $this->envelope,
-        );
-    }
-
-    protected function pool(): PoolService
-    {
-        if (! is_null($this->io_pool)) {
-            return $this->io_pool;
-        }
-
-        $vessel = MagicAlias::getMagicAliasApplication();
-        if (! is_null($vessel) && $vessel->bound('io-pool')) {
-            return $vessel->make('io-pool');
-        }
-
-        throw StargazerException::httpPoolNotBound();
     }
 
     public function url(): string
@@ -147,20 +127,6 @@ class PendingNasaRequest
         return $this->call_name;
     }
 
-    protected function absoluteUrl(): string
-    {
-        $url = $this->url();
-        $query = $this->query();
-
-        if ($query === []) {
-            return $url;
-        }
-
-        $separator = str_contains($url, '?') ? '&' : '?';
-
-        return $url.$separator.http_build_query($query);
-    }
-
     protected function requiresApiKey(): bool
     {
         return parse_url($this->base->value, PHP_URL_HOST) === 'api.nasa.gov';
@@ -168,10 +134,8 @@ class PendingNasaRequest
 
     protected function resolveApiKey(): string
     {
-        $vessel = MagicAlias::getMagicAliasApplication();
-
-        if (! is_null($vessel) && $vessel->bound('config')) {
-            $key = $vessel->make('config')->get('nasa.api_key');
+        if (function_exists('app') && app()->bound('config')) {
+            $key = app('config')->get('nasa.api_key');
             if (! is_null($key) && $key !== '') {
                 return (string) $key;
             }
@@ -186,9 +150,8 @@ class PendingNasaRequest
             return $this->http;
         }
 
-        $root = Http::getMagicAliasRoot();
-        if ($root instanceof Factory) {
-            return $root;
+        if (function_exists('app') && app()->bound('http')) {
+            return app('http');
         }
 
         throw StargazerException::httpClientUnavailable();

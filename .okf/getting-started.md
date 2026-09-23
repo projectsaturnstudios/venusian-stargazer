@@ -1,19 +1,19 @@
 ---
 type: Reference
 title: Getting started — Venusian Stargazer
-description: How a Venusian sketch reaches NASA through NASA, NasaClient, a per-API service, and PendingNasaRequest.
+description: How a Venusian sketch reaches NASA through nasa(), NasaClient, a per-API service, and PendingNasaRequest.
 tags:
   - getting-started
   - stargazer
   - venusian
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-09-04
-  at: '2026-09-04T03:15:00Z'
+  by: claude-opus-5-5
+  at: '2026-09-23T16:21:52Z'
 sources:
-  - id: nasa-alias
-    resource: src/MagicAliases/NASA.php
-    title: NASA MagicAlias
+  - id: nasa-helper
+    resource: src/helpers.php
+    title: nasa() helper
   - id: nasa-client
     resource: src/NasaClient.php
     title: NasaClient accessors
@@ -24,9 +24,9 @@ sources:
 
 # Overview
 
-`NASA` is a Voyager MagicAlias whose accessor is the `'nasa'` container binding (`NasaClient`). The `@method` block lists the nine core accessors. The service provider registers that client as a container singleton and merges `config/nasa.php` (`api_key` from `NASA_API_KEY`, default `DEMO_KEY`).[^nasa-alias][^provider]
+`nasa()` resolves `app('nasa')`, the `NasaClient` singleton. The service provider registers that client and merges `config/nasa.php` (`api_key` from `NASA_API_KEY`, default `DEMO_KEY`).[^nasa-helper][^provider]
 
-A sketch calls a per-API accessor (`donki()`, `eonet()`, `imageLibrary()`, …) and then a builder method. The builder returns a [`PendingNasaRequest`](/architecture.md). `get()` is synchronous; `async()` follows the [envelope pattern](/async-envelope-pattern.md).[^nasa-client]
+A sketch calls a per-API accessor (`donki()`, `eonet()`, `imageLibrary()`, …) and then a builder method. The builder returns a [`PendingNasaRequest`](/architecture.md). `get()` is synchronous; `async()` follows the [async lane](/async-seam.md).[^nasa-client]
 
 Deferred hosts (`gibs()`, `trek()`, …) throw [`NotYetSupportedException`](/deferred-apis.md) until those leaves exist.
 
@@ -35,6 +35,6 @@ Deferred hosts (`gibs()`, `trek()`, …) throw [`NotYetSupportedException`](/def
 * [Architecture](/architecture.md) — the builder/DTO/enum pattern.
 * [API coverage](/api-coverage.md) — which families ship and which are stubs.
 
-[^nasa-alias]: NASA MagicAlias
+[^nasa-helper]: nasa() helper
 [^nasa-client]: NasaClient accessors
 [^provider]: StargazerServiceProvider

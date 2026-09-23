@@ -12,9 +12,8 @@ class NasaApiService
     ) {}
 
     /**
-     * @param  Closure(mixed):mixed|class-string|null  $hydrator  Sync lane: get() feeds it decoded JSON.
+     * @param  Closure(mixed):mixed|class-string|null  $hydrator  Shapes the decoded JSON for get() and async() alike.
      * @param  array<string, mixed>  $query
-     * @param  Closure|null  $envelope  Async lane: the driver feeds it the HttpResult; it answers mail.
      */
     public function pending(
         NasaURL $base,
@@ -22,9 +21,8 @@ class NasaApiService
         string $call_name,
         Closure|string|null $hydrator = null,
         array $query = [],
-        ?Closure $envelope = null,
     ): PendingNasaRequest {
-        return $this->client->pending($base, $path, $call_name, $hydrator, $query, $envelope);
+        return $this->client->pending($base, $path, $call_name, $hydrator, $query);
     }
 
     /**

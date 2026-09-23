@@ -1,30 +1,27 @@
 ---
 type: API Family
 title: APOD
-description: Astronomy Picture of the Day — single-or-list envelope family with media link-follow.
+description: Astronomy Picture of the Day — single-or-list family with media link-follow.
 tags:
   - apod
   - imagery
   - core
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-09-04
-  at: '2026-09-04T03:15:00Z'
+  by: claude-opus-5-5
+  at: '2026-09-23T16:21:52Z'
 sources:
   - id: service
     resource: src/APOD/ApodAPIService.php
     title: ApodAPIService
-  - id: arrived
-    resource: src/APOD/APODArrived.php
-    title: APODArrived mail
   - id: picture
     resource: src/APOD/DataObjects/AstronomyPicture.php
-    title: AstronomyPicture renderAsync sidecar
+    title: AstronomyPicture render
 ---
 
 # Overview
 
-`NASA::apod()` hits `NasaURL::APOD`. A single date hydrates one `AstronomyPicture`; range and count hydrate a Collection of the same DTO. `date()` with a null `$date` sends today in `date_default_timezone_get()`, not UTC.[^service]
+`nasa()->apod()` hits `NasaURL::APOD`. A single date hydrates one `AstronomyPicture`; range and count hydrate a Collection of the same DTO. `date()` with a null `$date` sends today in `date_default_timezone_get()`, not UTC.[^service]
 
 # Endpoints
 
@@ -36,16 +33,15 @@ sources:
 
 Host is `api.nasa.gov`, so `api_key` is appended.
 
-# Mail
+# Async
 
-`async()` on every builder keeps the class-string hydrator and adds an envelope. The dock drains `APODArrived` (`$apods` is a list of `AstronomyPicture`, one item on a single-date day) or `APODFailed`.[^service][^arrived]
+`async()` fulfils with one `AstronomyPicture`, or a Collection of them on range and count. A non-success rejects with `StargazerException`.[^service]
 
-`AstronomyPicture::renderAsync()` follows the picture URL (or `hdurl` when asked). Mail is `APODImageReady` / `APODVideoReady` (`stash()` writes the bytes) or `APODMediaFailed`. Embed days with nothing to fetch return null.[^picture]
+`AstronomyPicture::render()` follows the picture URL (or `hdurl` when asked) and returns `Promise<Response>`. Embed days with nothing to fetch return null. `body()` is the bytes.[^picture]
 
 # Related
 
-* [Async envelope pattern](/async-envelope-pattern.md) — single-or-list payload plus DTO link-follow.
+* [Async lane](/async-seam.md) — single-or-list payload plus DTO link-follow.
 
 [^service]: ApodAPIService
-[^arrived]: APODArrived mail
-[^picture]: AstronomyPicture renderAsync sidecar
+[^picture]: AstronomyPicture render

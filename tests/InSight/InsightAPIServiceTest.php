@@ -1,14 +1,12 @@
 <?php
 
+use ProjectSaturnStudios\Stargazer\Exceptions\StargazerException;
 use ProjectSaturnStudios\Stargazer\InSight\DataObjects\InsightSol;
 use ProjectSaturnStudios\Stargazer\InSight\DataObjects\InsightWeather;
 use ProjectSaturnStudios\Stargazer\InSight\Enums\InsightSeason;
-use ProjectSaturnStudios\Stargazer\InSight\InsightArrived;
-use ProjectSaturnStudios\Stargazer\InSight\InsightFailed;
 use ProjectSaturnStudios\Stargazer\NasaClient;
+use Voyager\Contracts\IOPools\Promise;
 use Voyager\Http\Client\Factory;
-use Voyager\IOPools\Presumption;
-use Voyager\NutsAndBolts\MagicAliases\Http;
 
 function insightFixture(string $file = 'weather.json'): array
 {
@@ -22,21 +20,11 @@ function insightFixture(string $file = 'weather.json'): array
 
 function insightHttp(string $file = 'weather.json'): Factory
 {
-    $http = new Factory;
-    $http->preventStrayRequests();
+    $http = stargazerHttp();
     $http->fake(fn () => Factory::response(insightFixture($file)));
-    Http::swap($http);
 
     return $http;
 }
-
-beforeEach(function () {
-    Http::clearResolvedInstances();
-});
-
-afterEach(function () {
-    Http::clearResolvedInstances();
-});
 
 it('builds the InSight weather URL with the documented feed query', function () {
     $http = insightHttp();
@@ -92,35 +80,40 @@ it('hydrates InSight weather sols from the captured fixture', function () {
         ->and($weather->validity->forSol('259')->temperature->valid)->toBeTrue();
 });
 
-it('mails InsightArrived through the dock from async()', function () {
-    [$dock, $driver] = stargazerDock();
+it('sends each InSight async() builder on the loop', function (string $method, array $args, string $path) {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response([]));
 
-    $presumption = stargazerClient(stargazerHttp(), $dock)->insight()->weather()->async();
+    $promise = stargazerClient($http)->insight()->{$method}(...$args)->async();
 
-    expect($presumption)->toBeInstanceOf(Presumption::class)
-        ->and($presumption->name)->toBe('stargazer.insight.weather')
-        ->and($driver->dispatched[0]['url'])->toContain('insight_weather')
-        ->and($driver->dispatched[0]['url'])->toContain('feedtype=json');
+    expect($promise)->toBeInstanceOf(Promise::class);
+    $http->loop()->until(fn () => $promise->settled());
+    $http->assertSent(fn ($request) => str_contains($request->url(), $path));
+})->with([
+    'weather' => ['weather', [], 'insight_weather'],
+]);
 
-    $driver->ready = [stargazerResult('stargazer.insight.weather', insightFixture())];
-    $dock->pump();
+it('fulfils the InSight promise with hydrated data', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response(insightFixture()));
 
-    $mail = $dock->drain()->sole();
-    expect($mail)->toBeInstanceOf(InsightArrived::class)
-        ->and($mail->weather->solKeys)->not->toBeEmpty()
-        ->and($mail->ok())->toBeTrue()
-        ->and($presumption->settled())->toBeTrue();
+    $promise = stargazerClient($http)->insight()->weather()->async();
+    $result = $promise->wait();
+
+    expect($promise->fulfilled())->toBeTrue()
+        ->and($result)->toBeInstanceOf(InsightWeather::class)
+        ->and($result->solKeys)->not->toBeEmpty();
 });
 
-it('mails InsightFailed on a sad conversation', function () {
-    [$dock, $driver] = stargazerDock();
+it('rejects the InSight promise on a sad conversation', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response('gone', 503));
 
-    stargazerClient(stargazerHttp(), $dock)->insight()->weather()->async();
-    $driver->ready = [stargazerResult('stargazer.insight.weather', 'gone', status: 503)];
-    $dock->pump();
+    expect(fn () => stargazerClient($http)->insight()->weather()->async()->wait())
+        ->toThrow(StargazerException::class, '503');
+});
 
-    $mail = $dock->drain()->sole();
-    expect($mail)->toBeInstanceOf(InsightFailed::class)
-        ->and($mail->ok())->toBeFalse()
-        ->and($mail->reason)->toContain('503');
+it('refuses async() without a loop', function () {
+    expect(fn () => stargazerClient(stargazerHttp(loop: false))->insight()->weather()->async())
+        ->toThrow(StargazerException::class, 'loop');
 });

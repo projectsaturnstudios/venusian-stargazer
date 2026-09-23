@@ -1,22 +1,22 @@
 ---
 type: API Family
 title: Image and Video Library
-description: images-api.nasa.gov search, asset manifest, metadata location, and captions location, with envelope mail and ImageLocation sidecar follow.
+description: images-api.nasa.gov search, asset manifest, metadata location, and captions location, with ImageLocation sidecar follow.
 tags:
   - image-library
   - media
   - core
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-09-04
-  at: '2026-09-04T02:40:00Z'
+  by: claude-opus-5-5
+  at: '2026-09-23T16:21:52Z'
 sources:
   - id: service
     resource: src/ImageLibrary/ImageLibraryAPIService.php
     title: ImageLibraryAPIService
   - id: location
     resource: src/ImageLibrary/DataObjects/ImageLocation.php
-    title: ImageLocation fetchAsync sidecar
+    title: ImageLocation fetch
   - id: docs
     resource: https://images.nasa.gov/docs/images.nasa.gov_api_docs.pdf
     title: images.nasa.gov API documentation v1.22.0
@@ -24,9 +24,9 @@ sources:
 
 # Overview
 
-`NASA::imageLibrary()` uses `NasaURL::IMAGE_LIBRARY`. The host is not `api.nasa.gov`, so no `api_key` is sent.[^service][^docs]
+`nasa()->imageLibrary()` uses `NasaURL::IMAGE_LIBRARY`. The host is not `api.nasa.gov`, so no `api_key` is sent.[^service][^docs]
 
-Search and album-style results are Collection+JSON. Metadata and captions return a `{ location }` pointer; `ImageLocation::fetchAsync()` follows that pointer when the caller wants the sidecar JSON or SRT/VTT bytes.[^location]
+Search and album-style results are Collection+JSON. Metadata and captions return a `{ location }` pointer; `ImageLocation::fetch()` follows that pointer when the caller wants the sidecar JSON or SRT/VTT bytes.[^location]
 
 # Endpoints
 
@@ -41,18 +41,17 @@ Search accepts the official query params as fluent setters (`media_type`, `page_
 
 The official docs also list `GET /album/{album_name}`. That builder is not in this leaf; add it when a fixture and Pest example exist.
 
-# Mail
+# Async
 
-`async()` on every builder keeps the class-string hydrator and adds an envelope. The dock drains `ImageLibraryArrived` (`$page` is the endpoint DTO) or `ImageLibraryFailed`.[^service]
+`async()` fulfils with the endpoint DTO (`ImageSearchPage`, `ImageAssetManifest`, or `ImageLocation`). A non-success rejects with `StargazerException`.[^service]
 
-`ImageLocation::fetchAsync()` follows `$this->location` through `app('io-pool')->http()`. The call name is `stargazer.imagelibrary.sidecar.{crc32 of $this->location}` — the DTO has no `nasa_id`, and this pass does not add one. Coalesce via `inFlight($name)`. Mail is `ImageSidecarReady` (`stash()` writes the bytes) or `ImageSidecarFailed`. Search-item hrefs are not followed.[^location]
+`ImageLocation::fetch()` follows `$this->location` and returns `Promise<Response>`. Spaces in the href are encoded as `%20` at the wire. `callName()` is a label only. Search-item hrefs are not followed.[^location]
 
 # Related
 
 * [Architecture](/architecture.md) — Collection+JSON hydrators.
-* [Async envelope pattern](/async-envelope-pattern.md) — hydrator/envelope lanes and DTO link-follow.
-* [Async seam](/async-seam.md) — `stargazer.imagelibrary.*` call names.
+* [Async lane](/async-seam.md) — promise lane and DTO link-follow.
 
 [^service]: ImageLibraryAPIService
-[^location]: ImageLocation fetchAsync sidecar
+[^location]: ImageLocation fetch
 [^docs]: images.nasa.gov API documentation v1.22.0

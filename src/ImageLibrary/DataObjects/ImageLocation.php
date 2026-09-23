@@ -3,12 +3,8 @@
 namespace ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects;
 
 use ProjectSaturnStudios\Stargazer\Contracts\HydratesFromArray;
-use ProjectSaturnStudios\Stargazer\ImageLibrary\ImageSidecarFailed;
-use ProjectSaturnStudios\Stargazer\ImageLibrary\ImageSidecarReady;
 use ProjectSaturnStudios\Stargazer\Support\HydratesNasaData;
-use Voyager\Contracts\IOPools\Completion;
-use Voyager\IOPools\DTO\HttpResult;
-use Voyager\IOPools\Presumption;
+use Voyager\Contracts\IOPools\Promise;
 
 final readonly class ImageLocation implements HydratesFromArray
 {
@@ -26,32 +22,12 @@ final readonly class ImageLocation implements HydratesFromArray
     }
 
     /**
-     * Follow this location pointer through the io pool. The result
-     * arrives as mail — ImageSidecarReady with the bytes,
-     * ImageSidecarFailed when the conversation goes sour — so a
-     * sketch listens instead of plumbing HTTP. Answers the
-     * Presumption for hooks, or the in-flight one when this sidecar
-     * is already downloading. The DTO has no nasa_id; the call name
-     * keys off crc32 of the location URL so sync hydration stays put.
+     * Fetch this sidecar on the event loop. Library hrefs carry raw
+     * spaces (nasa_ids like "Webb First Images"); curl refuses them, so
+     * encode at the wire. The DTO keeps the raw location.
      */
-    public function fetchAsync(): Presumption
+    public function fetch(): Promise
     {
-        $name = 'stargazer.imagelibrary.sidecar.'.crc32($this->location);
-        $http = app('io-pool')->http();
-
-        if (! is_null($in_flight = $http->inFlight($name))) {
-            return $in_flight;
-        }
-
-        // Library hrefs carry raw spaces (nasa_ids like "Webb First Images");
-        // curl refuses them, so encode at the wire. The name and the DTO keep
-        // the raw location — identity stays what the manifest said.
-        return $http->fetch(
-            $name,
-            str_replace(' ', '%20', $this->location),
-            envelope: fn (HttpResult $result): Completion => ($result->ok && $result->status < 400)
-                ? new ImageSidecarReady($this, $result)
-                : new ImageSidecarFailed($this, $result, $result->error ?? "Sidecar answered status {$result->status}."),
-        );
+        return app('http')->async()->get(str_replace(' ', '%20', $this->location));
     }
 }

@@ -2,7 +2,7 @@
     "name": "projectsaturnstudios/venusian-stargazer",
     "description": "National Aeronautics and Space Administration (NASA) integration for Venusian Framework applications.",
     "type": "library",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "license": "MIT",
     "authors": [
         {
@@ -12,34 +12,34 @@
     ],
     "require": {
         "php": "^8.4|^8.5",
-        "venusian-voyager/http": "^0.8.0",
-        "venusian-voyager/io-pools": "^0.8.0",
-        "venusian-voyager/nuts-and-bolts": "^0.8.0"
+        "venusian-voyager/http": "^0.9.1",
+        "venusian-voyager/io-pools": "^0.9.1",
+        "venusian-voyager/nuts-and-bolts": "^0.9.1"
     },
     "require-dev": {
         "mockery/mockery": "^1.6",
-        "pestphp/pest": "^4"
+        "pestphp/pest": "^4",
+        "venusian-voyager/config": "^0.9.0",
+        "venusian-voyager/vessel": "^0.9.0"
     },
     "autoload": {
         "psr-4": {
             "ProjectSaturnStudios\\Stargazer\\": "src/"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "extra": {
         "venusian": {
             "providers": [
                 "ProjectSaturnStudios\\Stargazer\\Providers\\StargazerServiceProvider"
-            ],
-            "aliases": {
-                "NASA": "ProjectSaturnStudios\\Stargazer\\MagicAliases\\NASA"
-            }
+            ]
         }
     },
     "scripts": {
@@ -55,24 +55,6 @@
             "pestphp/pest-plugin": true
         }
     },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "/Volumes/ProjectSaturnStudios/Development/PHP/ProjectSaturnStudios/dev/venusian/framework/src/Voyager/*",
-            "options": {
-                "symlink": true,
-                "versions": {
-                    "venusian-voyager/collections": "0.8.5",
-                    "venusian-voyager/conditionable": "0.8.5",
-                    "venusian-voyager/contracts": "0.8.5",
-                    "venusian-voyager/http": "0.8.5",
-                    "venusian-voyager/io-pools": "0.8.5",
-                    "venusian-voyager/macroable": "0.8.5",
-                    "venusian-voyager/magic-aliases": "0.8.5",
-                    "venusian-voyager/nuts-and-bolts": "0.8.5",
-                    "venusian-voyager/reflection": "0.8.5"
-                }
-            }
-        }
-    ]
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

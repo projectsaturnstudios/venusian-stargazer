@@ -1,27 +1,24 @@
 ---
 type: API Family
 title: EONET
-description: Earth Observatory Natural Event Tracker v3 — one page DTO per endpoint envelope family.
+description: Earth Observatory Natural Event Tracker v3 — one page DTO per endpoint.
 tags:
   - eonet
   - earth
   - core
 status: draft
 generated:
-  by: cursor-grok-4.6/2026-09-04
-  at: '2026-09-04T03:15:00Z'
+  by: claude-opus-5-5
+  at: '2026-09-23T16:21:52Z'
 sources:
   - id: service
     resource: src/EONET/EonetAPIService.php
     title: EonetAPIService
-  - id: arrived
-    resource: src/EONET/EonetArrived.php
-    title: EonetArrived mail
 ---
 
 # Overview
 
-`NASA::eonet()` uses `NasaURL::EONET` (`/api/v3`, not v2.1). The host is not `api.nasa.gov`, so no `api_key` is sent.[^service]
+`nasa()->eonet()` uses `NasaURL::EONET` (`/api/v3`, not v2.1). The host is not `api.nasa.gov`, so no `api_key` is sent.[^service]
 
 # Endpoints
 
@@ -35,15 +32,14 @@ sources:
 
 Fluent query params (`source()`, `status()`, `limit()`) ride on `PendingNasaRequest`. `EonetEventStatus` is `OPEN` / `CLOSED` / `ALL`.
 
-The campaign example `NASA::eonet()->categories()->source('InciWeb')->status('open')->async()` dispatches `stargazer.eonet.categories`; the dock drains `EonetArrived` (`$page` is the endpoint page DTO) or `EonetFailed`.[^service][^arrived]
+The campaign example `nasa()->eonet()->categories()->source('InciWeb')->status('open')->async()` fulfils with `EonetCategoriesPage`. A non-success rejects with `StargazerException`.[^service]
 
-# Mail
+# Async
 
-`async()` on every builder keeps the class-string hydrator and adds an envelope. The dock drains `EonetArrived` (`$page` is `EonetEventsPage`, `EonetCategoriesPage`, `EonetSourcesPage`, `EonetLayersPage`, or `EonetMagnitudesPage`) or `EonetFailed`.[^service][^arrived]
+`async()` fulfils with the page DTO `get()` returns (`EonetEventsPage`, `EonetCategoriesPage`, `EonetSourcesPage`, `EonetLayersPage`, or `EonetMagnitudesPage`). A non-success rejects with `StargazerException`.[^service]
 
 # Related
 
-* [Async envelope pattern](/async-envelope-pattern.md) — one page DTO per endpoint.
+* [Async lane](/async-seam.md) — one page DTO per endpoint.
 
 [^service]: EonetAPIService
-[^arrived]: EonetArrived mail
