@@ -67,9 +67,9 @@ it('hydrates a list endpoint into a Collection of DTOs via get()', function () {
 
     $result = (new NasaClient(api_key: 'TEST_KEY', http: $http))
         ->pending(
-            base: NasaURL::DONKI,
-            path: 'CME',
-            call_name: 'stargazer.donki.cme',
+            base: NasaURL::NEOWS,
+            path: 'feed',
+            call_name: 'stargazer.neows.feed',
             hydrator: CoreArchSampleRecord::class,
             query: ['startDate' => '2026-07-01', 'endDate' => '2026-08-01'],
         )
@@ -84,7 +84,7 @@ it('hydrates a list endpoint into a Collection of DTOs via get()', function () {
     $http->assertSent(function ($request) {
         $url = $request->url();
 
-        return str_contains($url, '/DONKI/CME')
+        return str_contains($url, '/neo/rest/v1/feed')
             && str_contains($url, 'startDate=2026-07-01')
             && str_contains($url, 'api_key=TEST_KEY');
     });
@@ -135,11 +135,11 @@ it('returns a loop promise from async() that fulfils with hydrated data', functi
     $http->fake(fn () => Factory::response([['id' => '1', 'name' => 'alpha']]));
 
     $promise = (new PendingNasaRequest(
-        base: NasaURL::DONKI,
-        path: 'CME',
-        call_name: 'stargazer.donki.cme',
+        base: NasaURL::NEOWS,
+        path: 'feed',
+        call_name: 'stargazer.neows.feed',
         hydrator: CoreArchSampleRecord::class,
-        query: ['startDate' => '2026-07-01'],
+        query: ['start_date' => '2026-07-01'],
         api_key: 'TEST_KEY',
         http: $http,
     ))->async();
@@ -147,7 +147,7 @@ it('returns a loop promise from async() that fulfils with hydrated data', functi
     expect($promise)->toBeInstanceOf(Promise::class)
         ->and($promise->wait()->first()->name)->toBe('alpha');
 
-    $http->assertSent(fn ($request) => str_contains($request->url(), '/DONKI/CME')
+    $http->assertSent(fn ($request) => str_contains($request->url(), '/neo/rest/v1/feed')
         && str_contains($request->url(), 'api_key=TEST_KEY'));
 });
 
@@ -197,9 +197,9 @@ it('falls back to DEMO_KEY when no api_key is given for an api.nasa.gov host', f
     $http->fake(fn () => Factory::response(['id' => '1', 'name' => 'n']));
 
     (new PendingNasaRequest(
-        base: NasaURL::DONKI,
-        path: 'FLR',
-        call_name: 'stargazer.donki.flr',
+        base: NasaURL::NEOWS,
+        path: 'feed',
+        call_name: 'stargazer.neows.feed',
         hydrator: CoreArchSampleRecord::class,
         http: $http,
     ))->get();

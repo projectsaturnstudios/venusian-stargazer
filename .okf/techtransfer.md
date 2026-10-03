@@ -28,7 +28,7 @@ sources:
 | `software($query)` | `software` | `software` |
 | `spinoff($query)` | `spinoff` | `Spinoff` |
 
-`TechTransferCatalog` is the closed set. Host is `api.nasa.gov`, so `api_key` is appended. Records arrive as positional arrays and are mapped field-by-field in `TechTransferRecord::fromArray()`.
+`TechTransferCatalog` is the closed set. `NasaURL::TECHTRANSFER` is `https://technology.nasa.gov/api/api` (api.nasa.gov/techtransfer 302s there and drops the path), so no `api_key` is sent. Records arrive as positional arrays and are mapped field-by-field in `TechTransferRecord::fromArray()`.
 
 # Async
 

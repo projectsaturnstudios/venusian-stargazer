@@ -21,6 +21,10 @@ use Voyager\Config\Repository as Config;
 use Voyager\Http\Async\HttpAsyncManager;
 use Voyager\Http\Client\Factory;
 use Voyager\IOPools\EventLoop;
+use Voyager\IOPools\LoopWaiter;
+use Voyager\IOPools\PromiseEngines\GuzzlePromiseEngine;
+use Voyager\IOPools\ResourceRegistry;
+use Voyager\IOPools\Waiter\StreamSelectWaiterBackend;
 use Voyager\Vessel\ControlPanel;
 
 /*
@@ -55,7 +59,12 @@ function stargazerHttp(bool $loop = true): Factory
     ]]]));
 
     if ($loop) {
-        $vessel->registerInstance('event-loop', new EventLoop);
+        $registry = new ResourceRegistry();
+        $vessel->registerInstance('event-loop', new EventLoop(
+            $registry,
+            new LoopWaiter($registry, new StreamSelectWaiterBackend(), 5_000_000),
+            new GuzzlePromiseEngine(),
+        ));
     }
 
     $http = new Factory(null, new HttpAsyncManager($vessel));

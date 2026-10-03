@@ -6,6 +6,12 @@ use RuntimeException;
 
 class StargazerException extends RuntimeException
 {
+    /**
+     * The HTTP status of the failed response; null when no response was involved.
+     * @var int|null
+     */
+    protected ?int $status = null;
+
     public static function loopNotBound(): self
     {
         return new self(
@@ -22,7 +28,19 @@ class StargazerException extends RuntimeException
 
     public static function requestFailed(int $status, string $url, string $body): self
     {
-        return new self("NASA request failed ({$status}) for {$url}: {$body}");
+        $exception = new self("NASA request failed ({$status}) for {$url}: {$body}");
+        $exception->status = $status;
+
+        return $exception;
+    }
+
+    /**
+     * The HTTP status of the failed response, or null when no response was involved.
+     * @return int|null
+     */
+    public function status(): ?int
+    {
+        return $this->status;
     }
 
     public static function invalidHydrator(mixed $hydrator): self

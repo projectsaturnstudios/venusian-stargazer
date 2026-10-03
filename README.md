@@ -13,7 +13,7 @@ echo $picture->title; // "Flyby Image of Saturn's Sponge Moon Hyperion"
 ## Requirements
 
 - PHP 8.4 or 8.5
-- A Venusian 0.9 app, or standalone `venusian-voyager/http`, `io-pools` and `nuts-and-bolts` 0.9.1+
+- A Venusian 0.10 app, or standalone `venusian-voyager/http`, `io-pools` and `nuts-and-bolts` 0.10+
 
 ## Installation
 
@@ -37,7 +37,7 @@ php computer vendor:publish --tag=nasa-config
 
 ## Usage
 
-Pick an API family, then an endpoint. Nothing is sent until `get()` or `async()`. `get()` blocks and returns a DTO for a single object, or a `Collection` of DTOs for a list. A non-2xx response throws `StargazerException`. `async()` returns a promise on the event loop that fulfils with what `get()` returns and rejects with what it throws. With no loop bound, `async()` throws `StargazerException`.
+Pick an API family, then an endpoint. Nothing is sent until `get()` or `async()`. `get()` blocks and returns a DTO for a single object, or a `Collection` of DTOs for a list. A non-2xx response throws `StargazerException`, whose `status()` is the HTTP status, so a caller can tell a 429 from a 404 from a 503. `async()` returns a promise on the event loop that fulfils with what `get()` returns and rejects with what it throws. With no loop bound, `async()` throws `StargazerException`.
 
 ```php
 $flares = nasa()->donki()->flr('2017-09-06', '2017-09-06')->get();
@@ -76,7 +76,7 @@ Some DTOs can fetch their own media on the loop. Each method returns a promise o
 
 | DTO | Method | Notes |
 |---|---|---|
-| `AstronomyPicture` (APOD) | `render(bool $hd = false)` | Returns `null` when the day's media is an embed, such as a YouTube video. |
+| `AstronomyPicture` (APOD) | `render(bool $hd = false)` | Fetches the screen-sized picture, the full-size `hdurl` with `$hd`, or a video day's mp4. Returns `null` on an embed day, such as a YouTube video. |
 | `EpicImage` (EPIC) | `render(EpicCollection $collection, EpicImageType $type = EpicImageType::PNG)` | Builds the archive URL from the image's date. |
 | `ImageLocation` (Image Library) | `fetch()` | Follows the `location` pointer returned by `asset()`, `metadata()` and `captions()`. |
 
@@ -104,7 +104,7 @@ $image->render(EpicCollection::NATURAL, EpicImageType::JPG)
 | `techtransfer()` | NASA Technology Transfer | `patent`, `software`, `spinoff` |
 | `imageLibrary()` | NASA Image and Video Library | `search`, `asset`, `metadata`, `captions` |
 
-Your key goes to APOD, NeoWs, DONKI, EPIC and InSight.
+Your key goes to NeoWs, EPIC and InSight. APOD comes from science.nasa.gov's APOD API, which replaced the api.nasa.gov one (archived December 1, 2026). DONKI is served by NASA's CCMC (`ccmc.gsfc.nasa.gov/DONKI-API`) since its September 2026 move. Neither takes a key.
 
 ### Not yet supported
 
@@ -123,11 +123,16 @@ nasa()->apod()->range('2015-06-01', '2015-06-03')->get()->pluck('title');
 
 | Method | Returns |
 |---|---|
-| `date(?string $date = null, bool $thumbs = false)` | `AstronomyPicture`. With no date, it asks for today in your app's timezone. |
-| `range(string $start_date, ?string $end_date = null, bool $thumbs = false)` | `Collection<AstronomyPicture>` |
-| `count(int $count, bool $thumbs = false)` | `Collection<AstronomyPicture>`, picked at random by NASA |
+| `date(?string $date = null)` | `AstronomyPicture`. With no date, it asks for today in your app's timezone. |
+| `range(string $start, ?string $end = null)` | `Collection<AstronomyPicture>`, oldest first. `$end` defaults to today. At most 100 days; more throws `InvalidArgumentException`. |
+| `count(int $count)` | `Collection<AstronomyPicture>`: `$count` (1 to 100) consecutive days from a random point in the archive, oldest first. The API has no random pick, so it asks for a random page. |
 
-`AstronomyPicture` has `date`, `title`, `explanation`, `url`, `hdurl`, `media_type`, `copyright` and `thumbnail_url`. `$thumbs` asks NASA for `thumbnail_url` on video days.
+`AstronomyPicture` has `date`, `title`, `explanation`, `url`, `hdurl`, `media_type`, `copyright`, `thumbnail_url`, `permalink` and `alt`.
+
+- `url` is the media: the picture at screen size (1600 px on its longest side), a video day's mp4, or an embed day's player address.
+- `hdurl` is the full-size picture. On a video day it is the still, and `thumbnail_url` carries it too.
+- `permalink` is the day's article on science.nasa.gov.
+- `title`, `explanation`, `copyright` and `alt` are plain text. The explanation drops its "Explanation:" lead-in and the site notices after it.
 
 ### NeoWs
 

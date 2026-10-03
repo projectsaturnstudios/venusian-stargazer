@@ -4,7 +4,7 @@ title: Stargazer async lane
 description: get() blocks; async() returns a loop promise of the same DTOs; DTO link-followers return Promise<Response>.
 tags: [async, http, loop]
 status: draft
-generated: { by: claude-opus-5-5, at: '2026-09-23T16:21:52Z' }
+generated: { by: claude-opus-5-5, at: '2026-10-02T12:00:00Z' }
 sources:
   - id: pending
     resource: src/PendingNasaRequest.php
@@ -16,7 +16,7 @@ sources:
 
 # Two lanes, one hydrator
 
-`get()` sends through `app('http')` (or the Factory on `NasaClient`), blocks, hydrates. Non-2xx throws `StargazerException`.[^pending]
+`get()` sends through `app('http')` (or the Factory on `NasaClient`), blocks, hydrates. Non-2xx throws `StargazerException`; `status()` is the HTTP status (null when no response was involved).[^pending][^exception]
 
 `async()` sends through the same Factory's loop driver and returns `Voyager\Contracts\IOPools\Promise`. Fulfils with what `get()` returns; rejects with what `get()` throws. No loop bound on the Factory → `StargazerException::loopNotBound()`.[^pending][^exception]
 

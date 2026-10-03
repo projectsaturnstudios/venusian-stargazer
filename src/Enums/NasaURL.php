@@ -4,9 +4,9 @@ namespace ProjectSaturnStudios\Stargazer\Enums;
 
 enum NasaURL: string
 {
-    case APOD = 'https://api.nasa.gov/planetary/apod';
+    case APOD = 'https://science.nasa.gov/wp-json/wp/v2/apod-basic';
     case NEOWS = 'https://api.nasa.gov/neo/rest/v1';
-    case DONKI = 'https://api.nasa.gov/DONKI';
+    case DONKI = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get';
     case EONET = 'https://eonet.gsfc.nasa.gov/api/v3';
     case EPIC = 'https://api.nasa.gov/EPIC';
 

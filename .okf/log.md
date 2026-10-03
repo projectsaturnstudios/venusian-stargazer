@@ -1,5 +1,11 @@
 # Update Log
 
+## 2026-10-02
+* **Update**: [APOD](apod.md) — `NasaURL::APOD` moves to science.nasa.gov's `wp-json/wp/v2/apod-basic` (api.nasa.gov APOD archived 2026-12-01); no `api_key`. `date()` addresses `/YYMMDD`; `range($start, $end)` sends `date_from`/`date_to`/`per_page`, oldest first, ≤100 days; `count()` = consecutive days from a random page. `$thumbs` and `service_version` gone; `AstronomyPicture` gains `permalink`, `alt`, a screen-sized `url`, mp4 `url` on video days, plain-text explanation and credit. [Architecture](architecture.md), [API coverage](api-coverage.md) follow.
+* **Update**: [TechTransfer](techtransfer.md) — host line corrected to `technology.nasa.gov`, no `api_key`.
+* **Update**: [DONKI](donki.md) — `NasaURL::DONKI` moves to CCMC's `https://ccmc.gsfc.nasa.gov/DONKI-API/get` (api.nasa.gov/DONKI now 301s to a news page); no `api_key`. [Architecture](architecture.md), [API coverage](api-coverage.md) follow.
+* **Update**: 0.10 — requires `venusian-voyager/*` ^0.10.0 ([index](index.md)); `StargazerException::status()` carries the failed response's HTTP status ([async lane](async-seam.md)).
+
 ## 2026-09-23
 * **Update**: [Async lane](async-seam.md) — `async()` returns a loop promise of the `get()` DTOs; rejects with `StargazerException`; `render()`/`fetch()` return `Promise<Response>`. Envelope pattern concept deleted; mail classes gone. Family concepts, [API coverage](api-coverage.md), [getting started](getting-started.md) follow. `nasa()` replaces the `NASA` MagicAlias.
 

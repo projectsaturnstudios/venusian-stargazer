@@ -39,7 +39,7 @@ Closed value sets are string- or int-backed enums with FULLY UPPERCASE cases. Th
 
 # Auth
 
-`api_key` is appended only when `parse_url(NasaURL, PHP_URL_HOST)` is `api.nasa.gov`. EONET, TLE, and Image Library skip it. A missing key falls back to `DEMO_KEY`.
+`api_key` is appended only when `parse_url(NasaURL, PHP_URL_HOST)` is `api.nasa.gov`. EONET, TLE, Image Library, DONKI (CCMC's `DONKI-API`), APOD (science.nasa.gov's `apod-basic`), and TechTransfer (`technology.nasa.gov`) skip it. A missing key falls back to `DEMO_KEY`.
 
 # Schema
 

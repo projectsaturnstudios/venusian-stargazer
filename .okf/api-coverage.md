@@ -54,7 +54,7 @@ Every core family has an async lane: `async()` fulfils with what `get()` returns
 | SSD/CNEOS | `SSD_CNEOS` | `ssd()` | See [deferred APIs](/deferred-apis.md) |
 | Techport | `TECHPORT` | `techport()` | See [deferred APIs](/deferred-apis.md) |
 
-EONET is v3 (`/api/v3`), not the older v2.1 host. Image Library, EONET, and TLE are not `api.nasa.gov` hosts and do not receive `api_key`.
+EONET is v3 (`/api/v3`), not the older v2.1 host. Image Library, EONET, TLE, DONKI, APOD (science.nasa.gov's `apod-basic`), and TechTransfer (`technology.nasa.gov`) are not `api.nasa.gov` hosts and do not receive `api_key`.
 
 TechTransfer `imageUrl` follow and Image Library `GET /album/{name}` are not in this pass.
 

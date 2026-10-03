@@ -47,10 +47,10 @@ it('builds each DONKI endpoint URL and hydrates the captured fixture', function 
     $http->assertSent(function ($request) use ($path) {
         $url = $request->url();
 
-        return str_contains($url, '/DONKI/'.$path)
+        return str_starts_with($url, 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/'.$path.'?')
             && str_contains($url, 'startDate=2026-07-01')
             && str_contains($url, 'endDate=2026-08-01')
-            && str_contains($url, 'api_key=TEST_KEY');
+            && ! str_contains($url, 'api_key=');
     });
 })->with('donki list endpoints');
 
@@ -100,7 +100,7 @@ it('appends CME analysis catalog filters from DONKI docs', function () {
     $http->assertSent(function ($request) {
         $url = $request->url();
 
-        return str_contains($url, '/DONKI/CMEAnalysis')
+        return str_contains($url, '/DONKI-API/get/CMEAnalysis')
             && str_contains($url, 'mostAccurateOnly=true')
             && str_contains($url, 'completeEntryOnly=true')
             && str_contains($url, 'speed=500')
@@ -121,7 +121,7 @@ it('appends IPS location and catalog filters from DONKI docs', function () {
     $http->assertSent(function ($request) {
         $url = $request->url();
 
-        return str_contains($url, '/DONKI/IPS')
+        return str_contains($url, '/DONKI-API/get/IPS')
             && str_contains($url, 'location=Earth')
             && str_contains($url, 'catalog=M2M_CATALOG');
     });
@@ -143,7 +143,7 @@ it('appends flare class and catalog filters from DONKI docs', function () {
     $http->assertSent(function ($request) {
         $url = $request->url();
 
-        return str_contains($url, '/DONKI/FLR')
+        return str_contains($url, '/DONKI-API/get/FLR')
             && str_contains($url, 'class=X')
             && str_contains($url, 'catalog=M2M_CATALOG');
     });
@@ -188,17 +188,17 @@ it('sends each DONKI async() builder on the loop', function (string $method, arr
     $http->loop()->until(fn () => $promise->settled());
     $http->assertSent(fn ($request) => str_contains($request->url(), $path));
 })->with([
-    'cme' => ['cme', ['2026-07-01', '2026-08-01',], '/DONKI/CME'],
-    'cmeAnalysis' => ['cmeAnalysis', ['2026-07-01', '2026-08-01',], '/DONKI/CMEAnalysis'],
-    'gst' => ['gst', ['2026-07-01', '2026-08-01',], '/DONKI/GST'],
-    'ips' => ['ips', ['2026-07-01', '2026-08-01',], '/DONKI/IPS'],
-    'flr' => ['flr', ['2026-07-01', '2026-08-01',], '/DONKI/FLR'],
-    'sep' => ['sep', ['2026-07-01', '2026-08-01',], '/DONKI/SEP'],
-    'mpc' => ['mpc', ['2026-07-01', '2026-08-01',], '/DONKI/MPC'],
-    'rbe' => ['rbe', ['2026-07-01', '2026-08-01',], '/DONKI/RBE'],
-    'hss' => ['hss', ['2026-07-01', '2026-08-01',], '/DONKI/HSS'],
-    'wsaEnlilSimulations' => ['wsaEnlilSimulations', ['2026-07-01', '2026-08-01',], '/DONKI/WSAEnlilSimulations'],
-    'notifications' => ['notifications', ['2026-07-01', '2026-08-01',], '/DONKI/notifications'],
+    'cme' => ['cme', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/CME'],
+    'cmeAnalysis' => ['cmeAnalysis', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/CMEAnalysis'],
+    'gst' => ['gst', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/GST'],
+    'ips' => ['ips', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/IPS'],
+    'flr' => ['flr', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/FLR'],
+    'sep' => ['sep', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/SEP'],
+    'mpc' => ['mpc', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/MPC'],
+    'rbe' => ['rbe', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/RBE'],
+    'hss' => ['hss', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/HSS'],
+    'wsaEnlilSimulations' => ['wsaEnlilSimulations', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/WSAEnlilSimulations'],
+    'notifications' => ['notifications', ['2026-07-01', '2026-08-01',], '/DONKI-API/get/notifications'],
 ]);
 
 it('fulfils the DONKI promise with hydrated data', function () {
