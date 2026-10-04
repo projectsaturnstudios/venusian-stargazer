@@ -54,4 +54,35 @@ class StargazerException extends RuntimeException
     {
         return new self("NASA response for {$url} was not a JSON object or list.");
     }
+
+    /** A GIBS service answered with an OGC exception report instead of what was asked for. */
+    public static function serviceException(string $url, ?string $code, string $text): self
+    {
+        return new self("GIBS refused {$url}: ".($code ? "{$code}: " : '').trim($text));
+    }
+
+    public static function invalidXml(string $url, string $reason): self
+    {
+        return new self("NASA response for {$url} was not readable XML: {$reason}");
+    }
+
+    public static function unknownGibsLayer(string $layer): self
+    {
+        return new self("The GIBS capabilities list no layer '{$layer}'.");
+    }
+
+    public static function unknownTileMatrixSet(string $set): self
+    {
+        return new self("The GIBS capabilities list no tile matrix set '{$set}'.");
+    }
+
+    public static function invalidVectorTile(string $reason): self
+    {
+        return new self("The vector tile could not be read: {$reason}");
+    }
+
+    public static function unsupportedStyleExpression(string $operator): self
+    {
+        return new self("The vector style uses expression operator '{$operator}', which Stargazer does not evaluate.");
+    }
 }

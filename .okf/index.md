@@ -4,7 +4,7 @@ okf_version: '0.2'
 
 # Venusian Stargazer
 
-NASA API client for Venusian (`projectsaturnstudios/venusian-stargazer` 0.10.0). Start here, then open only the concepts the task needs.
+NASA API client for Venusian (`projectsaturnstudios/venusian-stargazer` 0.10.1). Start here, then open only the concepts the task needs.
 
 * [Getting started](getting-started.md) - how a sketch reaches NASA through the `nasa()` helper, client, service, and pending request.
 
@@ -25,7 +25,8 @@ NASA API client for Venusian (`projectsaturnstudios/venusian-stargazer` 0.10.0).
 * [TLE](tle.md) - two-line element satellite catalog.
 * [TechTransfer](techtransfer.md) - patents, software, and spinoffs.
 * [Image and Video Library](image-library.md) - images-api search, asset, metadata, and captions.
+* [GIBS](gibs.md) - Global Imagery Browse Services: WMTS, WMS, TWMS, colour maps, legends, metadata, vector tiles and styles.
 
 # Deferred
 
-* [Deferred APIs](deferred-apis.md) - GIBS, Trek WMTS, Exoplanet, Open Science, SSC, SSD/CNEOS, Techport stubs.
+* [Deferred APIs](deferred-apis.md) - Trek WMTS, Exoplanet, Open Science, SSC, SSD/CNEOS, Techport stubs.

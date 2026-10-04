@@ -7,6 +7,7 @@ use ProjectSaturnStudios\Stargazer\APOD\ApodAPIService;
 use ProjectSaturnStudios\Stargazer\DONKI\DonkiAPIService;
 use ProjectSaturnStudios\Stargazer\EONET\EonetAPIService;
 use ProjectSaturnStudios\Stargazer\EPIC\EpicAPIService;
+use ProjectSaturnStudios\Stargazer\Enums\NasaPayload;
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
 use ProjectSaturnStudios\Stargazer\Exoplanet\ExoplanetArchive;
 use ProjectSaturnStudios\Stargazer\GIBS\GibsAPIService;
@@ -39,6 +40,7 @@ class NasaClient
         string $call_name,
         Closure|string|null $hydrator = null,
         array $query = [],
+        NasaPayload $payload = NasaPayload::JSON,
     ): PendingNasaRequest {
         return new PendingNasaRequest(
             base: $base,
@@ -48,6 +50,7 @@ class NasaClient
             query: $query,
             api_key: $this->api_key,
             http: $this->http,
+            payload: $payload,
         );
     }
 
@@ -98,7 +101,7 @@ class NasaClient
 
     public function gibs(): GibsAPIService
     {
-        return new GibsAPIService;
+        return new GibsAPIService($this);
     }
 
     public function trek(): TrekWmtsAPIService

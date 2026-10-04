@@ -1,0 +1,1 @@
+<Domains xmlns:ows='http://www.opengis.net/ows/1.1'><DimensionDomain><ows:Identifier>time</ows:Identifier><Domain>2020-01-01/2020-03-01/P1D</Domain><Size>1</Size></DimensionDomain></Domains>

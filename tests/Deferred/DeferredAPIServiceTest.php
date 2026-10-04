@@ -3,7 +3,6 @@
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
 use ProjectSaturnStudios\Stargazer\Exceptions\NotYetSupportedException;
 use ProjectSaturnStudios\Stargazer\Exoplanet\ExoplanetArchive;
-use ProjectSaturnStudios\Stargazer\GIBS\GibsAPIService;
 use ProjectSaturnStudios\Stargazer\NasaClient;
 use ProjectSaturnStudios\Stargazer\OpenScience\OpenScienceAPIService;
 use ProjectSaturnStudios\Stargazer\SSC\SscAPIService;
@@ -15,7 +14,6 @@ it('throws NotYetSupportedException from every deferred API stub', function (str
     expect(fn () => new $class())
         ->toThrow(NotYetSupportedException::class, $name.' is not yet supported by Stargazer.');
 })->with([
-    'GIBS' => [GibsAPIService::class, 'GIBS'],
     'Trek WMTS' => [TrekWmtsAPIService::class, 'Trek WMTS'],
     'Exoplanet Archive' => [ExoplanetArchive::class, 'Exoplanet Archive'],
     'Open Science Data Repository' => [OpenScienceAPIService::class, 'Open Science Data Repository'],
@@ -28,7 +26,6 @@ it('exposes deferred accessors that throw immediately', function (string $method
     expect(fn () => (new NasaClient)->{$method}())
         ->toThrow(NotYetSupportedException::class, $name.' is not yet supported by Stargazer.');
 })->with([
-    'gibs' => ['gibs', 'GIBS'],
     'trek' => ['trek', 'Trek WMTS'],
     'exoplanet' => ['exoplanet', 'Exoplanet Archive'],
     'openScience' => ['openScience', 'Open Science Data Repository'],
@@ -42,7 +39,6 @@ it('catalogues every deferred host on NasaURL', function (NasaURL $case, string 
         ->and($case->value)->toStartWith('https://')
         ->and($case->value)->toContain($host);
 })->with([
-    'GIBS' => [NasaURL::GIBS, 'gibs.earthdata.nasa.gov'],
     'TREK_WMTS' => [NasaURL::TREK_WMTS, 'trek.nasa.gov'],
     'EXOPLANET' => [NasaURL::EXOPLANET, 'exoplanetarchive.ipac.caltech.edu'],
     'OPEN_SCIENCE' => [NasaURL::OPEN_SCIENCE, 'osdr.nasa.gov'],

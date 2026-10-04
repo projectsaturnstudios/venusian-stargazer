@@ -8,7 +8,7 @@ tags:
   - core
 status: draft
 generated:
-  by: claude-opus-5-5
+  by: claude-opus/5.5
   at: '2026-09-23T16:21:52Z'
 sources:
   - id: service

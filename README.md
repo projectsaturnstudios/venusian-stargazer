@@ -14,6 +14,7 @@ echo $picture->title; // "Flyby Image of Saturn's Sponge Moon Hyperion"
 
 - PHP 8.4 or 8.5
 - A Venusian 0.10 app, or standalone `venusian-voyager/http`, `io-pools` and `nuts-and-bolts` 0.10+
+- For GIBS: the `xmlreader`, `simplexml` and `zlib` extensions (bundled with PHP builds)
 
 ## Installation
 
@@ -103,12 +104,13 @@ $image->render(EpicCollection::NATURAL, EpicImageType::JPG)
 | `tle()` | Two-Line Element sets | `collection`, `search`, `satellite` |
 | `techtransfer()` | NASA Technology Transfer | `patent`, `software`, `spinoff` |
 | `imageLibrary()` | NASA Image and Video Library | `search`, `asset`, `metadata`, `captions` |
+| `gibs()` | Global Imagery Browse Services | `wmts()`, `wms()`, `twms()`, `colormap`, `legend`, `layerMetadata`, `vectorMetadata`, `vectorStyle` |
 
 Your key goes to NeoWs, EPIC and InSight. APOD comes from science.nasa.gov's APOD API, which replaced the api.nasa.gov one (archived December 1, 2026). DONKI is served by NASA's CCMC (`ccmc.gsfc.nasa.gov/DONKI-API`) since its September 2026 move. Neither takes a key.
 
 ### Not yet supported
 
-`gibs()`, `trek()`, `exoplanet()`, `openScience()`, `ssc()`, `ssd()` and `techport()` exist and throw `NotYetSupportedException`.
+`trek()`, `exoplanet()`, `openScience()`, `ssc()`, `ssd()` and `techport()` exist and throw `NotYetSupportedException`.
 
 ## API reference
 
@@ -284,6 +286,40 @@ $location->fetch()->wait()->json('AVAIL:Title');
 ```
 
 Each `ImageItemData` has `nasaId`, `title`, `description`, `center`, `dateCreated`, `mediaType` as an `ImageMediaType`, `keywords` and `photographer`.
+
+### GIBS
+
+NASA's Global Imagery Browse Services: daily satellite imagery and data layers as tiles and maps. No key. Images come back as the Http `Response`; decode `body()` with whatever draws them.
+
+```php
+use ProjectSaturnStudios\Stargazer\GIBS\DataObjects\GibsBox;
+use ProjectSaturnStudios\Stargazer\GIBS\Enums\GibsMapFormat;
+use ProjectSaturnStudios\Stargazer\GIBS\Enums\GibsTileFormat;
+
+$wmts = nasa()->gibs()->wmts();                 // EPSG:4326, best imagery
+$capabilities = $wmts->capabilities()->get();     // 1,300+ layers, read as a stream
+$modis = $capabilities->layer('MODIS_Terra_CorrectedReflectance_TrueColor');
+$zoom2 = $capabilities->tileMatrixSetOf($modis->identifier)->matrix(2);
+
+foreach ($zoom2->covering(new GibsBox(-30, 0, 60, 45))?->tiles() ?? [] as [$row, $col]) {
+    $jpeg = $wmts->tile($modis->identifier, '250m', 2, $row, $col, GibsTileFormat::JPEG, '2021-09-21')->get()->body();
+}
+
+$map = nasa()->gibs()->wms()->map('MODIS_Terra_CorrectedReflectance_TrueColor', new GibsBox(-130, 20, -60, 55), 700, 350, GibsMapFormat::PNG, '2021-09-21')->get();
+$fires = $wmts->vectorTile('VIIRS_NOAA20_Thermal_Anomalies_375m_All', '500m', 4, 3, 4, '2020-10-01')->get();
+```
+
+| Method | Returns |
+|---|---|
+| `wmts($projection, $set)->capabilities()` / `tile()` / `vectorTile()` / `domains()` | `WmtsCapabilities` / `Response` / `GibsVectorTile` / `WmtsDomains`; RESTful or KVP |
+| `wms(…)->capabilities($version)` / `map()` / `legendGraphic()` | `WmsCapabilities` / `Response` / `Response` |
+| `twms(…)->capabilities()` / `tileService()` / `tile($pattern)` / `map()` | `WmsCapabilities` / `TwmsTileService` / `Response` / `Response` |
+| `colormap($id, $version)` | `GibsColorMaps` (v1.0 or v1.3) |
+| `legend($id, $orientation, $format)` | `Response` (SVG or PNG) |
+| `layerMetadata($id)`, `vectorMetadata($id)` | `GibsLayerMetadata` |
+| `vectorStyle($id)` | `GibsVectorStyle`, whose layers evaluate their paint and layout for a feature at a zoom |
+
+Projections: `GibsProjection::EPSG4326`, `EPSG3857`, `EPSG3413` (Arctic), `EPSG3031` (Antarctic). Imagery sets: `BEST`, `STANDARD`, `NEAR_REAL_TIME`, `ALL`. Capabilities run to megabytes: hold on to the `WmtsCapabilities` you get, or cache the document at `capabilities()->url()` and rebuild it with `WmtsCapabilities::fromXml()`.
 
 ## Testing
 

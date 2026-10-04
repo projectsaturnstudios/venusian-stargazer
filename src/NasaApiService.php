@@ -3,6 +3,7 @@
 namespace ProjectSaturnStudios\Stargazer;
 
 use Closure;
+use ProjectSaturnStudios\Stargazer\Enums\NasaPayload;
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
 
 class NasaApiService
@@ -21,8 +22,9 @@ class NasaApiService
         string $call_name,
         Closure|string|null $hydrator = null,
         array $query = [],
+        NasaPayload $payload = NasaPayload::JSON,
     ): PendingNasaRequest {
-        return $this->client->pending($base, $path, $call_name, $hydrator, $query);
+        return $this->client->pending($base, $path, $call_name, $hydrator, $query, $payload);
     }
 
     /**

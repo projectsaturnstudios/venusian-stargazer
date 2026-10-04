@@ -75,6 +75,32 @@ function stargazerHttp(bool $loop = true): Factory
     return $http;
 }
 
+function gibsFixture(string $name): string
+{
+    return (string) file_get_contents(__DIR__.'/Fixtures/GIBS/'.$name);
+}
+
+/** An Http factory answering every request with $body and $type, recording the URLs asked for. */
+function gibsHttp(string $body, string $type = 'text/xml', int $status = 200): Factory
+{
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response($body, $status, ['Content-Type' => $type]));
+
+    return $http;
+}
+
+function sentUrl(Factory $http): string
+{
+    $urls = [];
+    $http->assertSent(function ($request) use (&$urls): bool {
+        $urls[] = $request->url();
+
+        return true;
+    });
+
+    return $urls[0];
+}
+
 function stargazerClient(Factory $http): NasaClient
 {
     return new NasaClient(api_key: 'TEST_KEY', http: $http);

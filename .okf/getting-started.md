@@ -8,7 +8,7 @@ tags:
   - venusian
 status: draft
 generated:
-  by: claude-opus-5-5
+  by: claude-opus/5.5
   at: '2026-09-23T16:21:52Z'
 sources:
   - id: nasa-helper
@@ -28,7 +28,7 @@ sources:
 
 A sketch calls a per-API accessor (`donki()`, `eonet()`, `imageLibrary()`, …) and then a builder method. The builder returns a [`PendingNasaRequest`](/architecture.md). `get()` is synchronous; `async()` follows the [async lane](/async-seam.md).[^nasa-client]
 
-Deferred hosts (`gibs()`, `trek()`, …) throw [`NotYetSupportedException`](/deferred-apis.md) until those leaves exist.
+Deferred hosts (`trek()`, `exoplanet()`, …) throw [`NotYetSupportedException`](/deferred-apis.md) until those leaves exist.
 
 # Related
 

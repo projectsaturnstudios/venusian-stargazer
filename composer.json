@@ -2,7 +2,7 @@
     "name": "projectsaturnstudios/venusian-stargazer",
     "description": "National Aeronautics and Space Administration (NASA) integration for Venusian Framework applications.",
     "type": "library",
-    "version": "0.10.0",
+    "version": "0.10.1",
     "license": "MIT",
     "authors": [
         {
