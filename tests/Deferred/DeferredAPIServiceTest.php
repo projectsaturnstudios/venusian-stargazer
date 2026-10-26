@@ -2,20 +2,16 @@
 
 use ProjectSaturnStudios\Stargazer\Enums\NasaURL;
 use ProjectSaturnStudios\Stargazer\Exceptions\NotYetSupportedException;
-use ProjectSaturnStudios\Stargazer\Exoplanet\ExoplanetArchive;
 use ProjectSaturnStudios\Stargazer\NasaClient;
 use ProjectSaturnStudios\Stargazer\OpenScience\OpenScienceAPIService;
 use ProjectSaturnStudios\Stargazer\SSC\SscAPIService;
 use ProjectSaturnStudios\Stargazer\SSD\SsdCneosAPIService;
 use ProjectSaturnStudios\Stargazer\Techport\TechportAPIService;
-use ProjectSaturnStudios\Stargazer\Trek\TrekWmtsAPIService;
 
 it('throws NotYetSupportedException from every deferred API stub', function (string $class, string $name) {
     expect(fn () => new $class())
         ->toThrow(NotYetSupportedException::class, $name.' is not yet supported by Stargazer.');
 })->with([
-    'Trek WMTS' => [TrekWmtsAPIService::class, 'Trek WMTS'],
-    'Exoplanet Archive' => [ExoplanetArchive::class, 'Exoplanet Archive'],
     'Open Science Data Repository' => [OpenScienceAPIService::class, 'Open Science Data Repository'],
     'Satellite Situation Center' => [SscAPIService::class, 'Satellite Situation Center'],
     'SSD/CNEOS' => [SsdCneosAPIService::class, 'SSD/CNEOS'],
@@ -26,8 +22,6 @@ it('exposes deferred accessors that throw immediately', function (string $method
     expect(fn () => (new NasaClient)->{$method}())
         ->toThrow(NotYetSupportedException::class, $name.' is not yet supported by Stargazer.');
 })->with([
-    'trek' => ['trek', 'Trek WMTS'],
-    'exoplanet' => ['exoplanet', 'Exoplanet Archive'],
     'openScience' => ['openScience', 'Open Science Data Repository'],
     'ssc' => ['ssc', 'Satellite Situation Center'],
     'ssd' => ['ssd', 'SSD/CNEOS'],
@@ -39,8 +33,6 @@ it('catalogues every deferred host on NasaURL', function (NasaURL $case, string 
         ->and($case->value)->toStartWith('https://')
         ->and($case->value)->toContain($host);
 })->with([
-    'TREK_WMTS' => [NasaURL::TREK_WMTS, 'trek.nasa.gov'],
-    'EXOPLANET' => [NasaURL::EXOPLANET, 'exoplanetarchive.ipac.caltech.edu'],
     'OPEN_SCIENCE' => [NasaURL::OPEN_SCIENCE, 'osdr.nasa.gov'],
     'SATELLITE_SITUATION_CENTER' => [NasaURL::SATELLITE_SITUATION_CENTER, 'sscweb.gsfc.nasa.gov'],
     'SSD_CNEOS' => [NasaURL::SSD_CNEOS, 'ssd-api.jpl.nasa.gov'],

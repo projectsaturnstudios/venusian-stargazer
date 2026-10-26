@@ -2,11 +2,15 @@
 
 namespace ProjectSaturnStudios\Stargazer\Providers;
 
-use ProjectSaturnStudios\Stargazer\NasaClient;
+use ReflectionException;
 use Voyager\NutsAndBolts\ServiceProvider;
+use ProjectSaturnStudios\Stargazer\NasaClient;
 
 class StargazerServiceProvider extends ServiceProvider
 {
+    /**
+     * @throws ReflectionException
+     */
     public function register(): void
     {
         $this->mergeConfigFrom(

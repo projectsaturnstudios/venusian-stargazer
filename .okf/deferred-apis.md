@@ -1,7 +1,7 @@
 ---
 type: API Family
 title: Deferred NASA APIs
-description: Trek WMTS, Exoplanet Archive, Open Science, SSC, SSD/CNEOS, and Techport stubs.
+description: Open Science, SSC, SSD/CNEOS, and Techport stubs.
 tags:
   - deferred
   - stubs
@@ -23,14 +23,12 @@ sources:
 
 # Overview
 
-These six hosts are catalogued on `NasaURL` and exposed as `NasaClient` accessors, but they have no builders, DTOs, or fixtures yet. Constructing the stub (or calling the accessor) throws `NotYetSupportedException::forApi()`.[^exception][^urls]
+These four hosts are catalogued on `NasaURL` and exposed as `NasaClient` accessors, but they have no builders, DTOs, or fixtures yet. Constructing the stub (or calling the accessor) throws `NotYetSupportedException::forApi()`.[^exception][^urls]
 
 # Stubs
 
 | Folder | Class | Accessor | `NasaURL` |
 |--------|-------|----------|-----------|
-| `src/Trek` | `TrekWmtsAPIService` | `trek()` | `TREK_WMTS` |
-| `src/Exoplanet` | `ExoplanetArchive` | `exoplanet()` | `EXOPLANET` |
 | `src/OpenScience` | `OpenScienceAPIService` | `openScience()` | `OPEN_SCIENCE` |
 | `src/SSC` | `SscAPIService` | `ssc()` | `SATELLITE_SITUATION_CENTER` |
 | `src/SSD` | `SsdCneosAPIService` | `ssd()` | `SSD_CNEOS` |

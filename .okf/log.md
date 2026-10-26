@@ -1,5 +1,8 @@
 # Update Log
 
+## 2026-10-24
+* **New**: [Exoplanet Archive](exoplanet.md) — TAP `sync`: `adql()`, `planets()`, `planet()`; limits in `maxrec`. [Trek WMTS](trek.md) — Moon/Mars/Vesta `layers()`, `capabilities()` (GIBS parser), `tile()`. Both move from [deferred](deferred-apis.md) to core in [API coverage](api-coverage.md). Version 0.10.2.
+
 ## 2026-10-04
 * **New**: [GIBS](gibs.md) — WMTS (capabilities, tiles, vector tiles, domains; RESTful or KVP; tile-grid math), WMS 1.1.1/1.3.0, TWMS, colour maps, legends, layer and vector metadata, vector styles with an expression evaluator. Moves from [deferred](deferred-apis.md) to core in [API coverage](api-coverage.md). Version 0.10.1.
 * **Update**: [Async lane](async-seam.md) — XML and byte payloads, per-request timeouts.

@@ -105,12 +105,32 @@ $image->render(EpicCollection::NATURAL, EpicImageType::JPG)
 | `techtransfer()` | NASA Technology Transfer | `patent`, `software`, `spinoff` |
 | `imageLibrary()` | NASA Image and Video Library | `search`, `asset`, `metadata`, `captions` |
 | `gibs()` | Global Imagery Browse Services | `wmts()`, `wms()`, `twms()`, `colormap`, `legend`, `layerMetadata`, `vectorMetadata`, `vectorStyle` |
+| `exoplanet()` | NASA Exoplanet Archive (TAP) | `adql`, `planets`, `planet` |
+| `trek()` | Solar System Treks WMTS (Moon, Mars, Vesta) | `layers`, `capabilities`, `tile` |
 
-Your key goes to NeoWs, EPIC and InSight. APOD comes from science.nasa.gov's APOD API, which replaced the api.nasa.gov one (archived December 1, 2026). DONKI is served by NASA's CCMC (`ccmc.gsfc.nasa.gov/DONKI-API`) since its September 2026 move. Neither takes a key.
+Your key goes to NeoWs, EPIC and InSight. APOD comes from science.nasa.gov's APOD API, which replaced the api.nasa.gov one (archived December 1, 2026). DONKI is served by NASA's CCMC (`ccmc.gsfc.nasa.gov/DONKI-API`) since its September 2026 move. Neither takes a key, and nor do the Exoplanet Archive and Trek.
 
 ### Not yet supported
 
-`trek()`, `exoplanet()`, `openScience()`, `ssc()`, `ssd()` and `techport()` exist and throw `NotYetSupportedException`.
+`openScience()`, `ssc()`, `ssd()` and `techport()` exist and throw `NotYetSupportedException`.
+
+### Exoplanets and Trek
+
+```php
+use ProjectSaturnStudios\Stargazer\Trek\Enums\TrekBody;
+use ProjectSaturnStudios\Stargazer\Trek\Enums\TrekProjection;
+
+$kepler = nasa()->exoplanet()->planet('Kepler-22 b')->get();
+printf("%s: %.1f days, %.2f Earth radii\n", $kepler->name, $kepler->orbitalPeriodDays, $kepler->radiusEarth);
+
+$newest = nasa()->exoplanet()->planets(where: 'disc_year >= 2025', limit: 10)->get();
+
+$moon = nasa()->trek()->layers(TrekBody::MOON)->get();
+$tile = nasa()->trek()->tile(TrekBody::MOON, TrekProjection::EQUIRECTANGULAR, 'LRO_WAC_Mosaic_Global_303ppd_v02', 0, 0, 0)->get();
+file_put_contents('moon-0-0-0.jpg', $tile->body());
+```
+
+`planets()` and `planet()` read `pscomppars`, one row per planet; `adql()` runs any ADQL. A limit goes in `maxrec`, because the archive applies `TOP` before `ORDER BY`. Trek's `capabilities()` answers the same `WmtsCapabilities` as GIBS, so its layer formats and tile matrix sets read the same way.
 
 ## API reference
 

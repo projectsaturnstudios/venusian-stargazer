@@ -106,12 +106,12 @@ class NasaClient
 
     public function trek(): TrekWmtsAPIService
     {
-        return new TrekWmtsAPIService;
+        return new TrekWmtsAPIService($this);
     }
 
     public function exoplanet(): ExoplanetArchive
     {
-        return new ExoplanetArchive;
+        return new ExoplanetArchive($this);
     }
 
     public function openScience(): OpenScienceAPIService
