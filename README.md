@@ -146,7 +146,7 @@ nasa()->apod()->range('2015-06-01', '2015-06-03')->get()->pluck('title');
 | Method | Returns |
 |---|---|
 | `date(?string $date = null)` | `AstronomyPicture`. With no date, it asks for today in your app's timezone. |
-| `range(string $start, ?string $end = null)` | `Collection<AstronomyPicture>`, oldest first. `$end` defaults to today. At most 100 days; more throws `InvalidArgumentException`. |
+| `range(string $start, ?string $end = null)` | `Collection<AstronomyPicture>`, oldest first. `$end` defaults to today. At most 25 days (the API's page); more throws `InvalidArgumentException`. |
 | `count(int $count)` | `Collection<AstronomyPicture>`: `$count` (1 to 100) consecutive days from a random point in the archive, oldest first. The API has no random pick, so it asks for a random page. |
 
 `AstronomyPicture` has `date`, `title`, `explanation`, `url`, `hdurl`, `media_type`, `copyright`, `thumbnail_url`, `permalink` and `alt`.

@@ -13,15 +13,15 @@ use Voyager\NutsAndBolts\Collection;
 /**
  * Astronomy Picture of the Day from science.nasa.gov's APOD API (wp-json/wp/v2/apod-basic),
  * which replaced the api.nasa.gov one (archived December 1, 2026). No api_key. Days are
- * addressed as YYMMDD; a list is one page of at most 100 days.
+ * addressed as YYMMDD; a list is one page of at most 25 days.
  */
 class ApodAPIService extends NasaApiService
 {
     /** APOD's first day. */
     public const string FIRST_DAY = '1995-06-16';
 
-    /** The API's largest page. */
-    public const int PAGE_LIMIT = 100;
+    /** The API's largest page: a larger per_page still answers 25 days (X-WP-TotalPages counts the rest). */
+    public const int PAGE_LIMIT = 25;
 
     /**
      * One day's picture; today (in the current timezone) when no date is given.

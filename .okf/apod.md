@@ -9,7 +9,7 @@ tags:
 status: draft
 generated:
   by: claude-opus/5.5
-  at: '2026-10-02T23:40:00Z'
+  at: '2026-11-10T12:00:00Z'
 sources:
   - id: service
     resource: src/APOD/ApodAPIService.php
@@ -24,7 +24,7 @@ sources:
 
 # Overview
 
-`nasa()->apod()` hits `NasaURL::APOD`, `https://science.nasa.gov/wp-json/wp/v2/apod-basic`. Not an `api.nasa.gov` host: no `api_key`, no quota spent. Days addressed `YYMMDD`. A list is one page, newest first, at most 100 days (`PAGE_LIMIT`); first day 1995-06-16 (`FIRST_DAY`).[^service][^docs]
+`nasa()->apod()` hits `NasaURL::APOD`, `https://science.nasa.gov/wp-json/wp/v2/apod-basic`. Not an `api.nasa.gov` host: no `api_key`, no quota spent. Days addressed `YYMMDD`. A list is one page, newest first, at most 25 days (`PAGE_LIMIT`: a larger `per_page` still answers 25); first day 1995-06-16 (`FIRST_DAY`).[^service][^docs]
 
 # Endpoints
 
@@ -34,7 +34,7 @@ sources:
 | `range($start, $end)` | `date_from`, `date_to` (`YYMMDD`), `per_page` = day count; null `$end` = today | `AstronomyPicture` list, oldest first |
 | `count($count)` | `per_page` = `$count`, `page` = random within the archive | `AstronomyPicture` list, oldest first |
 
-`range()` over 100 days and `count()` outside 1–100 throw `InvalidArgumentException` before sending. API has no random pick: `count()` = `$count` consecutive days from a random page.[^service]
+`range()` over 25 days and `count()` outside 1–25 throw `InvalidArgumentException` before sending. API has no random pick: `count()` = `$count` consecutive days from a random page.[^service]
 
 # AstronomyPicture
 

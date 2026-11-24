@@ -1,5 +1,8 @@
 # Update Log
 
+## 2026-11-10
+* **Fix**: [APOD](apod.md) — `PAGE_LIMIT` is 25: apod-basic answers at most 25 days a page whatever `per_page` asks, so a 31-day `range()` came back without its oldest 6 days. `range()` over 25 days now throws.
+
 ## 2026-10-24
 * **New**: [Exoplanet Archive](exoplanet.md) — TAP `sync`: `adql()`, `planets()`, `planet()`; limits in `maxrec`. [Trek WMTS](trek.md) — Moon/Mars/Vesta `layers()`, `capabilities()` (GIBS parser), `tile()`. Both move from [deferred](deferred-apis.md) to core in [API coverage](api-coverage.md). Version 0.10.2.
 

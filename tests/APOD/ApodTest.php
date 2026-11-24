@@ -83,8 +83,8 @@ it('asks for a date range as one page and hydrates it oldest first', function ()
 });
 
 it('refuses a range longer than one page', function () {
-    expect(fn () => (new NasaClient(api_key: 'TEST_KEY'))->apod()->range('2015-01-01', '2015-04-11'))
-        ->toThrow(InvalidArgumentException::class, 'at most 100 days, got 101');
+    expect(fn () => (new NasaClient(api_key: 'TEST_KEY'))->apod()->range('2015-01-01', '2015-01-26'))
+        ->toThrow(InvalidArgumentException::class, 'at most 25 days, got 26');
 });
 
 it('asks for count consecutive days from a page inside the archive and hydrates them oldest first', function () {
@@ -111,8 +111,8 @@ it('asks for count consecutive days from a page inside the archive and hydrates 
 
 it('refuses a count outside one page', function (int $count) {
     expect(fn () => (new NasaClient(api_key: 'TEST_KEY'))->apod()->count($count))
-        ->toThrow(InvalidArgumentException::class, "1 to 100, got {$count}");
-})->with([0, 101]);
+        ->toThrow(InvalidArgumentException::class, "1 to 25, got {$count}");
+})->with([0, 26]);
 
 it('plays a video day from its mp4 and keeps the still as the thumbnail', function () {
     $picture = AstronomyPicture::fromArray(stargazerFixture('APOD', 'video'));
