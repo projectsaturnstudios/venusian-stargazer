@@ -41,7 +41,7 @@ sources:
 Hydrates the API's HTML fields into media links and plain text.[^picture]
 
 * `url` — the media. Image day: `hdurl` rescaled to 1600 px longest side when it is a `/dynamicimage/` URL (w/h query), else `hdurl` itself. Video day: `basic_html`'s `<video><source>` mp4, else its player `<iframe>` src.
-* `hdurl` — full-size picture; on a video day, the still. `thumbnail_url` = that still on video days, else null.
+* `hdurl` — full-size picture; on a video day, the still. A rendition the API gives in its place (`<picture>/jcr:content/renditions/cq5dam.thumbnail.48.48.png`, 48 px) is read as `<picture>`, which the same host serves at full size. `thumbnail_url` = that still on video days, else null.
 * `permalink` — the day's science.nasa.gov article.
 * `title`, `explanation`, `copyright`, `alt` — tags stripped, entities decoded, whitespace collapsed, the source's space-after-link closed up before punctuation. Explanation cut at its first double `<br>` (site notices, "Tomorrow's picture" footer) and loses its "Explanation:" lead-in. Copyright loses its "Image Credit:" label; falls back to `credit`.
 * `mediaKind()` — `'picture'`, `'video'` (url is mp4/mov/m4v), or null on an embed day.

@@ -305,6 +305,15 @@ $location->fetch()->wait()->json('AVAIL:Title');
 // "Apollo 11 Mission image - Astronaut Edwin Aldrin poses beside th"
 ```
 
+`ImageMetadata` reads the metadata file: the original's `width` and `height`, the camera (`make`, `model`, `camera()`), `lens`, `exposureTime`, `fNumber`, `iso`, `focalLength`, `credit`, and the `caption` written into the file. What the file leaves out is null.
+
+```php
+use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageMetadata;
+
+$metadata = ImageMetadata::fromArray($location->fetch()->wait()->json());
+$metadata->camera(); // "NIKON D4"
+```
+
 Each `ImageItemData` has `nasaId`, `title`, `description`, `center`, `dateCreated`, `mediaType` as an `ImageMediaType`, `keywords` and `photographer`.
 
 ### GIBS

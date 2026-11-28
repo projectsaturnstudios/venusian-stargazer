@@ -6,6 +6,7 @@ use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageAssetManifest;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageItemData;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageLink;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageLocation;
+use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageMetadata;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageSearchItem;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\DataObjects\ImageSearchPage;
 use ProjectSaturnStudios\Stargazer\ImageLibrary\Enums\ImageMediaType;
@@ -179,4 +180,34 @@ it('follows a location link with fetch() and fulfils with the bytes', function (
 
     expect($location->fetch()->wait()->body())->toBe('SIDECARBYTES');
     $http->assertSent(fn ($request) => $request->url() === str_replace(' ', '%20', $location->location));
+});
+
+it('reads a photographer\'s metadata file: size, camera, exposure, credit and caption', function () {
+    $metadata = ImageMetadata::fromArray(stargazerFixture('ImageLibrary', 'metadata-file'));
+
+    expect([$metadata->width, $metadata->height])->toBe([4928, 3280])
+        ->and($metadata->camera())->toBe('NIKON D4')
+        ->and($metadata->lens)->toBe('70.0-200.0 mm f/2.8')
+        ->and([$metadata->exposureTime, $metadata->fNumber, $metadata->iso, $metadata->focalLength])->toBe(['1/200', 4.0, 1600, '90.0 mm'])
+        ->and($metadata->caption)->toStartWith('JSC2014-E-036774 (18 April 2014) --- From the left');
+});
+
+it('reads a processed image\'s metadata file: its size and credit, and nulls for what it leaves out', function () {
+    $metadata = ImageMetadata::fromArray(stargazerFixture('ImageLibrary', 'metadata-file-processed'));
+
+    expect([$metadata->width, $metadata->height])->toBe([581, 915])
+        ->and($metadata->camera())->toBeNull()
+        ->and([$metadata->lens, $metadata->exposureTime, $metadata->fNumber, $metadata->iso])->toBe([null, null, null, null])
+        ->and($metadata->credit)->toBe('NASA/JPL')
+        ->and($metadata->caption)->toBe('Jupiter Plume');
+});
+
+it('reads the metadata file fetch() brings back', function () {
+    $http = stargazerHttp();
+    $http->fake(fn () => Factory::response(stargazerFixture('ImageLibrary', 'metadata-file')));
+
+    $location = ImageLocation::fromArray(stargazerFixture('ImageLibrary', 'metadata'));
+    $metadata = ImageMetadata::fromArray($location->fetch()->wait()->json());
+
+    expect($metadata->model)->toBe('NIKON D4');
 });

@@ -1,7 +1,7 @@
 ---
 type: API Family
 title: Image and Video Library
-description: images-api.nasa.gov search, asset manifest, metadata location, and captions location, with ImageLocation sidecar follow.
+description: images-api.nasa.gov search, asset manifest, metadata location, and captions location, with ImageLocation sidecar follow and ImageMetadata for the metadata file.
 tags:
   - image-library
   - media
@@ -17,6 +17,9 @@ sources:
   - id: location
     resource: src/ImageLibrary/DataObjects/ImageLocation.php
     title: ImageLocation fetch
+  - id: metadata
+    resource: src/ImageLibrary/DataObjects/ImageMetadata.php
+    title: ImageMetadata
   - id: docs
     resource: https://images.nasa.gov/docs/images.nasa.gov_api_docs.pdf
     title: images.nasa.gov API documentation v1.22.0
@@ -47,6 +50,10 @@ The official docs also list `GET /album/{album_name}`. That builder is not in th
 
 `ImageLocation::fetch()` follows `$this->location` and returns `Promise<Response>`. Spaces in the href are encoded as `%20` at the wire. `callName()` is a label only. Search-item hrefs are not followed.[^location]
 
+# The metadata file
+
+`ImageMetadata::fromArray($response->json())` reads the file `metadata()` points at, ExifTool's reading of the original: `width`, `height` (`File:ImageWidth`/`Height`, else EXIF's), `make`, `model`, `lens`, `exposureTime`, `fNumber`, `iso`, `focalLength` (EXIF), `credit` (`XMP:Credit`, `IPTC:Credit`, `AVAIL:SecondaryCreator`), `caption` (`XMP:Description`, else EXIF's or IPTC's). Empty values are null. `camera()` is the model alone when it starts with the maker's first word, else both. A photographer's picture carries the camera and exposure; a processed image (JPL's PIA items) often only its size and credit. Fixtures: `metadata-file` (jsc2014e036774), `metadata-file-processed` (PIA01518), captured 2026-11-26.[^metadata]
+
 # Related
 
 * [Architecture](/architecture.md) — Collection+JSON hydrators.
@@ -54,4 +61,5 @@ The official docs also list `GET /album/{album_name}`. That builder is not in th
 
 [^service]: ImageLibraryAPIService
 [^location]: ImageLocation fetch
+[^metadata]: ImageMetadata
 [^docs]: images.nasa.gov API documentation v1.22.0

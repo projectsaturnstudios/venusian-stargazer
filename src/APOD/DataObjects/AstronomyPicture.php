@@ -11,7 +11,11 @@ use Voyager\Contracts\IOPools\Promise;
  *
  * `url` is the media itself: a screen-sized picture, the mp4 on a video day, or the player's
  * address on an embed day. `hdurl` is the full-size picture (on a video day, its still).
- * `permalink` is the day's article. Explanation and copyright are plain text.
+ * `permalink` is the day's article. Explanation and copyright are plain text. Every address
+ * is absolute: APOD gives some scheme-relative (`//www.youtube.com/embed/...`), and its
+ * media is served over https, so those are read as https. Some days' `hdurl` is one of the
+ * picture's renditions (`.../picture.jpg/jcr:content/renditions/cq5dam.thumbnail.48.48.png`,
+ * 48 pixels): those are read as the picture itself.
  */
 final readonly class AstronomyPicture implements HydratesFromArray
 {
@@ -36,7 +40,7 @@ final readonly class AstronomyPicture implements HydratesFromArray
     public static function fromArray(array $data): static
     {
         $media_type = self::optionalText($data, 'media_type');
-        $hdurl = self::optionalText($data, 'hdurl');
+        $hdurl = self::original(self::absolute(self::optionalText($data, 'hdurl')));
         $html = (string) ($data['basic_html'] ?? '');
         $is_video = $media_type === 'video';
 
@@ -49,7 +53,7 @@ final readonly class AstronomyPicture implements HydratesFromArray
             media_type: $media_type,
             copyright: self::credit(self::optionalText($data, 'copyright') ?? self::optionalText($data, 'credit')),
             thumbnail_url: $is_video ? $hdurl : null,
-            permalink: self::optionalText($data, 'permalink') ?? self::optionalText($data, 'url'),
+            permalink: self::absolute(self::optionalText($data, 'permalink') ?? self::optionalText($data, 'url')),
             alt: self::plain(self::optionalText($data, 'alt')),
         );
     }
@@ -110,12 +114,31 @@ final readonly class AstronomyPicture implements HydratesFromArray
     }
 
     /**
+     * A scheme-relative address (//host/...) read as https, which APOD serves its media over.
+     */
+    protected static function absolute(?string $url): ?string
+    {
+        return ! is_null($url) && str_starts_with($url, '//') ? 'https:'.$url : $url;
+    }
+
+    /**
+     * A rendition's address (`<picture>/jcr:content/renditions/<rendition>`) as the picture it
+     * was made from, which the same host serves at full size. Any other address as it is.
+     */
+    protected static function original(?string $url): ?string
+    {
+        $at = is_null($url) ? false : strpos($url, '/jcr:content/renditions/');
+
+        return $at === false ? $url : substr($url, 0, $at);
+    }
+
+    /**
      * A video day's file: the page's <video><source>, else its player <iframe>.
      */
     protected static function playable(string $html): ?string
     {
         if (preg_match('/<source[^>]+src="([^"]+)"/i', $html, $match) || preg_match('/<iframe[^>]+src="([^"]+)"/i', $html, $match)) {
-            return html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5);
+            return self::absolute(html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5));
         }
 
         return null;

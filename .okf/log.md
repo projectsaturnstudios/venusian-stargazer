@@ -1,5 +1,11 @@
 # Update Log
 
+## 2026-11-27
+* **Fix**: [APOD](apod.md) — an `hdurl` that is one of the picture's renditions (`…/jcr:content/renditions/cq5dam.thumbnail.48.48.png`) is read as the picture itself: apod-basic gives the 48-pixel thumbnail in place of the full size on some days (2026-09-01, 09-15, 10-11, 11-03, 11-08).
+
+## 2026-11-26
+* **Update**: [Image and Video Library](image-library.md) — `ImageMetadata` reads an item's metadata file: size, camera, lens, exposure, credit and caption.
+
 ## 2026-11-10
 * **Fix**: [APOD](apod.md) — `PAGE_LIMIT` is 25: apod-basic answers at most 25 days a page whatever `per_page` asks, so a 31-day `range()` came back without its oldest 6 days. `range()` over 25 days now throws.
 

@@ -145,6 +145,34 @@ it('treats a player iframe as an embed day with nothing to fetch', function () {
         ->and($embed->render())->toBeNull();
 });
 
+it('reads a scheme-relative player, still or article address as https', function () {
+    $embed = AstronomyPicture::fromArray([
+        'date' => '2026-10-18',
+        'title' => 'x',
+        'media_type' => 'video',
+        'hdurl' => '//assets.example.test/still.jpg',
+        'url' => '//science.example.test/apod-2026-october-18/',
+        'basic_html' => '<iframe width="960" height="540" src="//www.youtube.com/embed/DzrCEm1ZBRY?rel=0"></iframe>',
+    ]);
+
+    expect($embed->url)->toBe('https://www.youtube.com/embed/DzrCEm1ZBRY?rel=0')
+        ->and($embed->hdurl)->toBe('https://assets.example.test/still.jpg')
+        ->and($embed->thumbnail_url)->toBe('https://assets.example.test/still.jpg')
+        ->and($embed->permalink)->toBe('https://science.example.test/apod-2026-october-18/');
+});
+
+it('reads a rendition given as hdurl as the picture it was made from', function () {
+    $picture = AstronomyPicture::fromArray([
+        'date' => '2026-11-08',
+        'title' => 'Major Fireball Meteor',
+        'media_type' => 'image',
+        'hdurl' => 'https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/2026/november/meteor2017_Taylor_1200.jpg/jcr:content/renditions/cq5dam.thumbnail.48.48.png',
+    ]);
+
+    expect($picture->hdurl)->toBe('https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/2026/november/meteor2017_Taylor_1200.jpg')
+        ->and($picture->url)->toBe($picture->hdurl);
+});
+
 it('sends each APOD async() builder on the loop', function (string $method, array $args, string $path) {
     $http = stargazerHttp();
     $http->fake(fn () => Factory::response([]));
